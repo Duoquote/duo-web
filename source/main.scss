@@ -1,0 +1,185 @@
+@import "~bootstrap/scss/bootstrap";
+@import "~github-markdown-css/github-markdown.css";
+
+@font-face {
+    font-family: 'Glacial Indifference';
+    src: url('subset-GlacialIndifference-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Glacial Indifference';
+    src: url('subset-GlacialIndifference-Bold.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+}
+
+
+$font-primary: "Glacial Indifference";
+
+$soft-white: #fbfbfb;
+$soft-dark: #1b1b1b;
+$soft-dark-blue: #202c46;
+$blue: #3ee4ff;
+$pink: #ff3c69;
+$orange: #ffab5a;
+$orange-transparent: #ffab5a94;
+$soft-transparent-blue: #5ab3ff78;
+$transparent-dark: #00000059;
+$shadow-L: -1px 1px 0 $blue;
+$shadow-R: 0px -1px 1px $pink;
+$shadowy: 0 0 4px #000, $shadow-L, $shadow-R;
+$drop-shadowy: drop-shadow($shadow-L)
+               drop-shadow($shadow-R);
+
+
+html, body {
+  height: 100%;
+}
+
+h1 {
+  text-shadow: $shadowy;
+}
+
+body {
+  overflow: hidden;
+}
+
+.navbar {
+  //background: linear-gradient(to bottom, $transparent-dark, #00000000);
+  background-color: #23314e5c;
+  backdrop-filter: blur(5px);
+}
+
+.navbar-dark {
+  .navbar-nav .nav-item .nav-link {
+    color: $soft-white;
+    text-shadow: $shadowy;
+    text-transform: capitalize;
+    transition-duration: 0.05s;
+    font-family: $font-primary;
+  }
+
+  .navbar-nav .nav-item .btn-group .btn-dark {
+    background-color: #343a4078;
+    font-family: $font-primary;
+  }
+
+  .navbar-toggler {
+    font-size: 1rem;
+    line-height: 1rem;
+  }
+
+  .main-nav .nav-item .nav-link:hover {
+    background-color: $orange;
+    color: $soft-dark;
+    text-shadow: 0px 0px 2px $transparent-dark;
+  }
+
+  .navbar-brand img {
+    filter: none;
+    transition-duration: 0.09s;
+  }
+
+  .navbar-brand:hover img {
+    filter: $drop-shadowy;
+    //filter: drop-shadow(-2px 2px 0px #deff5ac7)
+    //         drop-shadow(2px -2px 0px #5ab3ffc7);
+  }
+}
+
+
+#main-container {
+
+  .row a img {
+    transition-duration: 0.15s;
+    border-radius: 1000px;
+    box-shadow: 0 0 4px #000;
+  }
+
+  .name div a {
+    color: $soft-white;
+    font-family: $font-primary;
+    font-weight: bold;
+    text-decoration: underline;
+    text-transform: capitalize;
+    transition-duration: 0.05s;
+  }
+
+  .name div a:hover {
+    color: #ffe5cf;
+    background-color: $orange-transparent;
+  }
+}
+
+
+.markdown-body {
+
+  font-size: large;
+  color: $soft-white;
+  font-family: $font-primary;
+
+  strong {
+    text-shadow: $shadowy;
+    a {
+      font-size: larger;
+      padding: 1vw;
+    }
+
+    a:hover {
+      background-color: $soft-transparent-blue;
+    }
+  }
+
+  a {
+    color: $orange;
+  }
+
+  a:hover {
+    color: $soft-transparent-blue;
+  }
+
+  h1, h2 {
+    text-transform: uppercase;
+    font-weight: bold;
+  }
+
+}
+
+#overlay {
+  position: fixed;
+  height: 100%;
+  width: 100%;
+  background-color: #23314e;
+  z-index: 5000;
+}
+
+.containers {
+  display: none;
+  position: fixed;
+  overflow-y: auto;
+}
+
+.active {
+  display: inherit !important;
+}
+
+.bg-image {
+  position: fixed;
+  top: 0;
+  z-index: -10;
+  background: url(bg-img.jpg);
+  height: 100%;
+  width: 100%;
+  background-size: cover;
+  background-position-y: center;
+}
+
+.ttip {
+  background-color: #333;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+}

@@ -1,0 +1,79 @@
+doctype html
+html(lang="TR")
+  head
+    title #{data.fullname}
+    meta(http-equiv="Content-Type" content="text/html; charset=UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1")
+    meta(name="title" content=data.fullname)
+    meta(name="description" content=data.description)
+    meta(property="og:type" content="profile")
+    meta(property="og:url" content=data.url)
+    meta(property="og:title" content=data.fullname)
+    meta(property="og:image" content=`${data.url}me.jpg`)
+    meta(property="og:description" content=data.description)
+    meta(property="profile:first_name" content=data.firstname)
+    meta(property="profile:last_name" content=data.lastname)
+    meta(property="profile:username" content=data.nick)
+    meta(property="profile:gender" content="male")
+    each item in jsFiles
+      if item.match(/^(css).*\.js$/i)
+        script(src="dist/" + item type="text/javascript")
+  body
+    div(id="overlay" style="transform: translateY(0);")
+    nav(class="navbar navbar-expand-md fixed-top navbar-dark px-3 py-0")
+      a(class="navbar-brand mr-0 py-0" href="#main")
+        img(class="px-3 py-1" src="logo.svg" alt=data.nick)
+      button(
+        class="navbar-toggler"
+        type="button"
+        data-toggle="collapse"
+        data-target="#navList"
+        aria-controls="navList"
+        aria-expanded="false"
+        aria-label="Toggle Navigation Bar"
+      )
+        span(class="navbar-toggler-icon")
+      div(class="collapse navbar-collapse" id="navList")
+        ul(class="navbar-nav mr-auto main-nav")
+          each label in data.labels_available
+            if label in data.labels
+              li(class="nav-item")
+                a(href=`#${label}` class="nav-link px-3"
+                data-fill={target: "innerText", path: `data.labels["${label}"]`, default: data.labels[label]}
+                ) #{data.labels[label]}
+            else
+              li(class="nav-item")
+                a(href=`#${label}` class="nav-link px-3"
+                data-fill={target: "innerText", path: `data.labels["${label}"]`, default: label}
+                ) #{label}
+        ul(class="navbar-nav")
+          li(class="nav-item")
+            div(class="btn-group btn-group-sm w-100" role="group" id="lang-btn")
+              button(type="button" class="btn btn-dark btn-lg") TR
+              button(type="button" class="btn btn-dark btn-lg") EN
+    div(class="container-fluid h-100 px-3 py-5 px-sm-5 containers active" id="main-container" active)
+      div(class="row h-100 align-items-center justify-content-center")
+        div(class="col")
+          div(class="row")
+            a(class="mx-auto" href="#")
+              img(src="me.jpg" alt=data.fullname)
+          h1(class="text-center mt-4 display-4 name")
+            div(class="w-100")
+              a(href="#") #{data.fullname}
+    each pageName in data.labels_available
+      div(class="container-fluid h-100 px-3 py-5 px-sm-5 containers" id=`${pageName}-container`)
+        div(class="row h-100 align-items-center")
+          div(class="col px-3 px-sm-2 mx-sm-2 px-md-5")
+            div(class="row m-0")
+              div(class="post-data markdown-body mx-auto"
+                data-fill={target: "innerHTML", path: `data.pages["${pageName}"]`}
+                )!= data.pages[pageName]
+    div(class="bg-image")
+    <!--[if IE 9]>
+    each item in jsFiles
+      if item.match(/^(ie9).*\.js$/i)
+        script(src="dist/" + item type="text/javascript")
+    <![endif]-->
+    each item in jsFiles
+      if item.match(/^(js|lazy).*\.js$/i)
+        script(src="dist/" + item type="text/javascript")
