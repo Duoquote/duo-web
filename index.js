@@ -9,14 +9,6 @@ const http = require("http"),
       cookieParser = require("cookie-parser"),
       data = require("./data.js")
 
-//       Sentry = require("@sentry/node")
-//
-// Sentry.init({ dsn: "https://8fe9d7e1290f4e0a8d2fd2a0a05a2dd9@sentry.io/4845641" });
-//
-// app.use(Sentry.Handlers.requestHandler());
-
-//console.log(JSON.stringify(data));
-
 app.use(compression());
 
 app.use(cookieParser());
