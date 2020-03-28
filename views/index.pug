@@ -77,3 +77,6 @@ html(lang="TR")
     each item in jsFiles
       if item.match(/^(js|lazy).*\.js$/i)
         script(src="dist/" + item type="text/javascript")
+    if process.env.ANALYTICS_ID
+      script(async src=`https://www.googletagmanager.com/gtag/js?id=${process.env.ANALYTICS_ID}`)
+      script window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'UA-73137845-4');
