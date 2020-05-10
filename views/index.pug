@@ -15,6 +15,9 @@ html(lang="TR")
     meta(property="profile:last_name" content=data.lastname)
     meta(property="profile:username" content=data.nick)
     meta(property="profile:gender" content="male")
+    if gads
+      script(data-ad-client=gads src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js" async)
+    
     each item in jsFiles
       if item.match(/^(css).*\.js$/i)
         script(src="dist/" + item type="text/javascript")

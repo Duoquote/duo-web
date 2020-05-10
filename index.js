@@ -27,6 +27,7 @@ jsFiles = fs.readdirSync(path.resolve(config.DIST_DIR, "dist/"));
 
 app.get("/", (req, res) => {
   res.render("index", {
+    gads: config.GADS ? config.GADS : false,
     jsFiles: jsFiles,
     data: {
       ...data.global,
@@ -35,6 +36,23 @@ app.get("/", (req, res) => {
     svgName: (
       fs.existsSync(path.resolve(config.SRC_DIR, config.SVG_NAME))
     ) ? fs.readFileSync(path.resolve(config.SRC_DIR, config.SVG_NAME)) : false
+  })
+})
+
+data.lang["EN"].labels_available.forEach((page)=>{
+  app.get(`/${page}`, (req, res) => {
+    res.render("index", {
+      gads: config.GADS ? config.GADS : false,
+      jsFiles: jsFiles,
+      data: {
+        ...data.global,
+        ...data.lang["TR"]
+      },
+      active: page,
+      svgName: (
+        fs.existsSync(path.resolve(config.SRC_DIR, config.SVG_NAME))
+      ) ? fs.readFileSync(path.resolve(config.SRC_DIR, config.SVG_NAME)) : false
+    })
   })
 })
 
