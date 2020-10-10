@@ -1,17 +1,24 @@
 ## Yetenekler
 
-- Python
-  - BeautifulSoup
-  - lxml
 - Javascript
   - Anime.js
   - ES6
+  - ES2016
+  - ES2017
+  - Lodash
+- Python
+  - Django
+  - BeautifulSoup
+  - lxml
 - Node.JS
   - Express
   - Pug.js
   - Webpack
   - Electron
-- CSS
+- CSS, SCSS
 - Docker
 - Linux
 - Data mining
+- Git
+- MongoDB
+- React
