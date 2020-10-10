@@ -1,0 +1,13 @@
+version: "3.7"
+services:
+    web:
+        image: duoquote_web
+        ports:
+            - "5550:5550"
+        volumes:
+            - type: bind
+              source: /home/duoquote/web-pages
+              target: /app/pages
+        environment:
+            NODE_ENV: production
+        command: ["/bin/sh", "-c", "cd /app && npm start"]

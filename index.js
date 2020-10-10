@@ -10,12 +10,12 @@ const http = require("http"),
       data = require("./data.js")
 
 
-if (process.env.SENTRY_DSN) {
-  const Sentry = require("@sentry/node");
-  Sentry.init({dsn: process.env.SENTRY_DSN});
-  app.use(Sentry.Handlers.requestHandler());
-  console.log("Sentry loaded.");
-}
+// if (process.env.SENTRY_DSN) {
+//   const Sentry = require("@sentry/node");
+//   Sentry.init({dsn: process.env.SENTRY_DSN});
+//   app.use(Sentry.Handlers.requestHandler());
+//   console.log("Sentry loaded.");
+// }
 
 app.use(compression());
 
