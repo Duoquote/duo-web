@@ -2,11 +2,13 @@ version: "3.7"
 services:
     web:
         image: duoquote_web
+        build:
+            context: .
         ports:
             - "5550:5550"
         volumes:
             - type: bind
-              source: /home/duoquote/web-pages
+              source: /home/duoquote/web-pages/
               target: /app/pages
         environment:
             NODE_ENV: production
