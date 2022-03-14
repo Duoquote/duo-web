@@ -1,0 +1,11 @@
+{
+  "apps": [
+    {
+      "name": "duo-web",
+      "script": "yarn",
+      "args": "start",
+      "instances": "max",
+      "exec_mode": "cluster"
+    }
+  ]
+}
