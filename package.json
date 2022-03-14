@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "post-update": "echo \"codesandbox preview only, need an update\" && yarn upgrade --latest",
-    "pm2": "pm2"
+    "pm2": "NODE_PORT=8899 pm2 start pm2.json"
   },
   "dependencies": {
     "@emotion/cache": "latest",
