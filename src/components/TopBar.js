@@ -45,6 +45,11 @@ const TopBar = () => {
             {t("about")}
           </Button>
         </Link>
+        <Link href="/geo" passHref={true}>
+          <Button color="secondary">
+            {t("geoeditor")}
+          </Button>
+        </Link>
         <Box component="span" flexGrow={1} />
         <ButtonGroup variant="outlined" size="small">
           <Link href="" locale="tr" passHref>
