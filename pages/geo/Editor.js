@@ -19,10 +19,10 @@ import {
 
 // import geojsonhint from "@mapbox/geojsonhint/lib";
 
-import Map from "./Map";
-
 import { connect, useDispatch } from "react-redux";
 import { actions } from "../../redux/reducers/geo";
+
+const Map = dynamic(() => import("./Map"), { ssr: false })
 
 
 const GeoEditor = ({ geo }) => {
