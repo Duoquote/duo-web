@@ -130,7 +130,7 @@ const About = ({ isCompact = false }) => {
             Güven Değirmenci
           </Typography>
           <Typography gutterBottom variant="h6">
-            <Trans i18nKey="common:introduction2" components={[<HL />]}>
+            <Trans i18nKey="common:introduction2" components={[<HL key="elem" />]}>
               I am <HL>Python</HL>, <HL>Javascript</HL> and <HL>Flutter</HL> developer.
             </Trans>
           </Typography>
@@ -145,7 +145,7 @@ const About = ({ isCompact = false }) => {
           <Grid container spacing={1}>
             {
               languages.map(skill => (
-                <Grid item xs={isCompact ? 12 : 4}>
+                <Grid key={skill.name} item xs={isCompact ? 12 : 4}>
                   <Skill
                     name={t(`skills.${skill.name}`)}
                     rate={skill.rate}
@@ -162,7 +162,7 @@ const About = ({ isCompact = false }) => {
           <Grid container spacing={1}>
             {
               frameworks.map(skill => (
-                <Grid item xs={isCompact ? 12 : 4}>
+                <Grid key={skill.name} item xs={isCompact ? 12 : 4}>
                   <Skill
                     name={t(`skills.${skill.name}`)}
                     rate={skill.rate}
@@ -180,7 +180,7 @@ const About = ({ isCompact = false }) => {
           <Grid container spacing={1}>
             {
               techs.map(skill => (
-                <Grid item xs={isCompact ? 12 : 4}>
+                <Grid key={skill.name} item xs={isCompact ? 12 : 4}>
                   <Skill
                     name={t(`skills.${skill.name}`)}
                     rate={skill.rate}
@@ -198,7 +198,7 @@ const About = ({ isCompact = false }) => {
           <Grid container spacing={1}>
             {
               other.map(skill => (
-                <Grid item xs={isCompact ? 12 : 4}>
+                <Grid key={skill.name} item xs={isCompact ? 12 : 4}>
                   <Skill
                     name={t(`skills.${skill.name}`)}
                     rate={skill.rate}

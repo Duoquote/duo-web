@@ -32,7 +32,7 @@ const TopBar = () => {
       <Toolbar variant="dense">
         <Link href="/" passHref={true}>
           <IconButton size="small" edge="start" sx={{ mr: 2 }}>
-            <Image src={Logo} />
+            <Image alt="Duoquote Logo" src={Logo} />
           </IconButton>
         </Link>
         <Link href="/" passHref={true}>
