@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 
 import Editor, { DiffEditor, useMonaco, loader } from "@monaco-editor/react";
 import { SizeMe } from "react-sizeme";
@@ -22,10 +22,10 @@ import {
 import { connect, useDispatch } from "react-redux";
 import { actions } from "../../redux/reducers/geo";
 
-const Map = dynamic(() => import("./Map"), { ssr: false })
-
+import Map from "./Map";
 
 const GeoEditor = ({ geo }) => {
+
 
   const editorRef = useRef(null);
 

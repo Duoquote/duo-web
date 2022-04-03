@@ -1,7 +1,6 @@
-import L from "leaflet";
-import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
 import { SizeMe } from "react-sizeme";
 import useTranslation from "next-translate/useTranslation";
+import dynamic from "next/dynamic";
 
 import {
   Box, Grid, Paper, Divider,
@@ -12,6 +11,9 @@ import { actions } from "../../redux/reducers/geo";
 
 import "leaflet/dist/leaflet.css";
 import { useEffect } from "react";
+
+
+const { MapContainer, TileLayer, GeoJSON } = dynamic  (() => import("react-leaflet"), { ssr: false });
 
 const Map = ({ geo }) => {
 

@@ -7,7 +7,7 @@ import dynamic from "next/dynamic";
 
 import useTranslation from "next-translate/useTranslation";
 
-const Editor = dynamic(() => import("./Editor"), { ssr: false })
+import Editor from "./Editor";
 
 const Geo = () => {
 
