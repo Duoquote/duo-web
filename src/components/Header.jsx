@@ -2,7 +2,10 @@ import React, { useEffect } from "react";
 
 import {
   AppBar, Toolbar, IconButton, Typography, Button, Box,
-  useTheme, lighten, alpha,
+} from "@mui/material";
+
+import {
+  useTheme, lighten, alpha, useMediaQuery,
 } from "@mui/material";
 
 import { useNavigate, useLocation } from "react-router-dom";
@@ -16,6 +19,7 @@ import logo from "../assets/images/logo.svg";
 const Header = ({ }) => {
 
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -41,8 +45,8 @@ const Header = ({ }) => {
           variant="contained"
           color="inherit"
           style={{
-            backgroundColor: location.pathname === "/" ? "#ffffff00" : theme.palette.text.primary,
-            boxShadow: location.pathname === "/" ? "none" : undefined,
+            backgroundColor: location.pathname === "/" ? "#ffffff00" : (isMobile ? "transparent" : theme.palette.text.primary),
+            boxShadow: location.pathname === "/" ? "none" : (isMobile ? "none" : undefined),
             color: location.pathname === "/" ? theme.palette.getContrastText(theme.palette.background.default) : theme.palette.getContrastText(theme.palette.text.primary),
           }}
           sx={{
@@ -58,11 +62,15 @@ const Header = ({ }) => {
             backgroundImage: `url(${logo})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
-            mr: 1,
+            mr: isMobile ? 0 : 1,
           }} />
-          <Typography fontWeight="bold" variant="subtitle2" textTransform="capitalize">
-            Güven Değirmenci
-          </Typography>
+          {
+            !isMobile && (
+              <Typography fontWeight="bold" variant="subtitle2" textTransform="capitalize">
+                Güven Değirmenci
+              </Typography>
+            )
+          }
         </Button>
         <Button onClick={() => navigate("/about")}>
           About

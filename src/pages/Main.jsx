@@ -16,10 +16,10 @@ const Main = () => {
     <Box sx={{
       height: "100%",
       width: "100%",
-      overflowY: "scroll",
+      overflowY: "auto",
     }}>
       <Container maxWidth="md" sx={{ position: "relative" }}>
-        <Box sx={{ mt: "20%", mb: 6 }}>
+        <Box sx={{ mt: 10, mb: 6 }}>
           <Box
             component="img"
             src={logo}
@@ -64,6 +64,8 @@ const Main = () => {
             display: "block",
             border: theme => `1px solid ${alpha(theme.palette.primary.main, 0.5)}`,
             mb: 6,
+            width: "100%",
+            maxWidth: 512,
           }}
           component="img"
           src={`https://github-readme-stats.vercel.app/api/wakatime?username=duoquote&theme=dark&text_color=${theme.palette.text.primary.slice(1)}&bg_color=${theme.palette.background.default.slice(1)}&border_radius=0&hide_border=true&layout=compact&langs_count=8&custom_title=Coding%20Time%20Stats`}

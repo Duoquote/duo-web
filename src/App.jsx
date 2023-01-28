@@ -116,7 +116,11 @@ const App = ({ isDarkMode }) => {
           }),
         }}>
           <Background />
-          <Pages.Main />
+          {
+            location.pathname === "/" && (
+              <Pages.Main />
+            )
+          }
         </Box>
       </Box>
       <Outlet />
