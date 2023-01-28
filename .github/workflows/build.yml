@@ -29,7 +29,7 @@ jobs:
           find ./ -maxdepth 1 ! -name "dist" ! -name ".git" ! -name "." -exec rm -rf {} \; && \
           mv dist/* . && \
           rm -rf dist && \
-          git config --global user.name "github-actions" && \
+          git config --global user.name duoquote && \
           git config --global user.email "github-actions@github.com" && \
           git add . && \
           git commit -m "Deploy to GitHub Pages" && \
