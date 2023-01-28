@@ -23,16 +23,20 @@ jobs:
       - name: Build website
         run: yarn && yarn build
 
-      - name: Deploy to GitHub Pages
+      - name: Prepare branch for deployment
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPOSITORY: ${{ github.repository }}
         run: |
           find ./ -maxdepth 1 ! -name "dist" ! -name ".git" ! -name "." -exec rm -rf {} \; && \
           mv dist/* . && \
           rm -rf dist && \
-          git config --global user.name "github-actions[bot]" && \
-          git config --global user.email "github-actions@github.com" && \
+          git config --local user.name "github-actions[bot]" && \
+          git config --local user.email "github-actions[bot]@users.noreply.github.com" && \
           git add . && \
-          git commit -m "Deploy to GitHub Pages" && \
-          git push --force git+https://${GITHUB_TOKEN}@github.com/${REPOSITORY}.git HEAD:gh-pages
+          git commit -m "Deploy to GitHub Pages"
+      
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: gh-pages
