@@ -24,9 +24,12 @@ jobs:
         run: yarn && yarn build
 
       - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v1
-        with:
-          publish_dir: ./dist
-          publish_branch: gh-pages
-          force_orphan: true
+        run: |
+          find . -maxdepth 1 ! -name 'dist' ! -name '.git' -exec rm -rf {} + && \
+          mv dist/* . && \
+          rm -rf dist && \
+          git config --global user.name "github-actions" && \
+          git config --global user.email "github-actions@github.com" && \
+          git add . && \
+          git commit -m "Deploy to GitHub Pages" && \
+          git push --force "https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" HEAD:gh-pages
