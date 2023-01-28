@@ -8,27 +8,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [14.x]
-
     steps:
       - uses: actions/checkout@v3
 
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js 14.x
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 14.x
 
       - name: Build website
         run: yarn && yarn build
 
-      - name: Push to pages branch
-        run: |
-          git checkout -b page && \
-          find . -maxdepth 1 ! -name .git ! -name dist ! -name . -exec rm -rf {} \; && \
-          mv dist/* . && \
-          rm -rf dist && \
-          git add . && \
-          git commit -m "Deploy to gh-pages" && \
-          git push --force --set-upstream origin page
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
+        with:
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          force_orphan: true
