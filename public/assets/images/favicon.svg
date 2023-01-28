@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svgjs="http://svgjs.com/svgjs" width="1000" height="1000"><g transform="matrix(2.0833333333333335,0,0,2.0833333333333335,-5.684341886080802e-14,-5.684341886080802e-14)"><svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svgjs="http://svgjs.com/svgjs" width="480" height="480"><svg id="other" xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 480 480">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #ca2d2a;
+      }
+
+      .cls-1, .cls-2 {
+        fill-rule: evenodd;
+      }
+
+      .cls-2 {
+        fill: #e78c30;
+      }
+    </style>
+  </defs>
+  <path id="Shape_2_copy" data-name="Shape 2 copy" class="cls-1" d="M203.027,170.973L134,240l68.962,68.962,0.066,106.066L28,240,203.082,64.918Z"></path>
+  <path class="cls-1" d="M293.249,240.253l-53.238-53.237-0.054,106.011Zm-53.238-53.237"></path>
+  <path class="cls-1" d="M410.344,410.4v-75.29l-75,74.923Zm0-75.29"></path>
+  <path class="cls-2" d="M240,28V134L346,240,240,346V452L452,240Z"></path>
+</svg></svg></g></svg>
