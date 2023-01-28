@@ -26,7 +26,7 @@ jobs:
       - name: Push to pages branch
         run: |
           git checkout -b page && \
-          find . ! -name 'dist' ! -name '.git' -type f -exec rm -f {} + && \
+          find . -maxdepth 1 ! -name .git ! -name dist ! -name . -exec rm -rf {} \; && \
           mv dist/* . && \
           rm -rf dist && \
           git add . && \
