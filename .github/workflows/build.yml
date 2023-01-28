@@ -26,6 +26,7 @@ jobs:
           find ./ -maxdepth 1 ! -name "dist" ! -name ".git" ! -name "." -exec rm -rf {} \; && \
           mv dist/* . && \
           rm -rf dist && \
+          echo "guvendegirmenci.com" > CNAME && \
           git config --local user.name "github-actions[bot]" && \
           git config --local user.email "github-actions[bot]@users.noreply.github.com" && \
           git add . && \
