@@ -26,7 +26,7 @@ jobs:
       - name: Deploy to GitHub Pages
         run: |
           # Remove all files except .git and dist
-          find . -maxdepth 1 ! -name "dist" ! -name ".git" -type f -exec rm -f {} + && \
+          find ./ -maxdepth 1 ! -name "dist" ! -name ".git" ! -name "." -exec rm -rf {} \; && \
           mv dist/* . && \
           rm -rf dist && \
           git config --global user.name "github-actions" && \
