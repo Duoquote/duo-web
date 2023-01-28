@@ -24,13 +24,15 @@ jobs:
         run: yarn && yarn build
 
       - name: Deploy to GitHub Pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
         run: |
-          # Remove all files except .git and dist
           find ./ -maxdepth 1 ! -name "dist" ! -name ".git" ! -name "." -exec rm -rf {} \; && \
           mv dist/* . && \
           rm -rf dist && \
-          git config --global user.name duoquote && \
+          git config --global user.name "github-actions[bot]" && \
           git config --global user.email "github-actions@github.com" && \
           git add . && \
           git commit -m "Deploy to GitHub Pages" && \
-          git push --force "https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" HEAD:gh-pages
+          git push --force git+https://${GITHUB_TOKEN}@github.com/${REPOSITORY}.git HEAD:gh-pages
