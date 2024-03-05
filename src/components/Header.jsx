@@ -82,7 +82,7 @@ const Header = ({ }) => {
           {t("header.about")}
         </Button>
         <Box component="span" sx={{ flexGrow: 1 }} />
-        <Button onClick={() => i18n.changeLanguage(i18n.language === "en" ? "tr" : "en")}>
+        <IconButton onClick={() => i18n.changeLanguage(i18n.language === "en" ? "tr" : "en")}>
           {
             i18n.language === "en" ? (
               <US title="English" width={24} height={24} />
@@ -90,7 +90,7 @@ const Header = ({ }) => {
               <TR title="Türkçe" width={24} height={24} />
             )
           }
-        </Button>
+        </IconButton>
         {/* <Button color="inherit">Login</Button> */}
       </Toolbar>
     </AppBar>

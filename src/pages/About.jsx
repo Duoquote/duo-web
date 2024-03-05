@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 import {
   Box, Container, Paper, Typography, GlobalStyles,
@@ -14,6 +14,8 @@ const About = () => {
 
   const { t } = useTranslation();
   const isMobile = useMediaQuery("(max-width: 600px)");
+
+  const [showVideo, setShowVideo] = useState(false);
 
   return (
     <React.Fragment>
@@ -54,13 +56,38 @@ const About = () => {
             pb: 8,
             width: isMobile ? "100%" : "auto",
           }}>
-            <Box sx={{
-              background: `url(${miau}) no-repeat center center`,
-              backgroundSize: "cover",
-              height: 256,
-              width: isMobile ? "100%" : 256,
-              borderRadius: 1,
-            }} />
+            {
+              showVideo ? (
+                <Box
+                  component="iframe"
+                  width="100%"
+                  height="100%"
+                  sx={{ height: 256 }}
+                  src="https://www.youtube.com/embed/SWkMYO9V_-k?si=pwN8dQ5k-UILodxK&amp;controls=0&amp;autoplay=1&amp;fs=0"
+                  title="YouTube video player"
+                  frameborder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowfullscreen
+                ></Box>
+              ) : (
+                <Box
+                  sx={{
+                    background: `url(${miau}) no-repeat center center`,
+                    backgroundSize: "cover",
+                    height: 256,
+                    width: isMobile ? "100%" : 256,
+                    borderRadius: 1,
+                    cursor: "pointer",
+                  }}
+                  onClick={() => {
+                    setShowVideo(true);
+                    setTimeout(() => {
+                      setShowVideo(false);
+                    }, 10200);
+                  }}
+                />
+              )
+            }
           </Box>
         </Container>
       </Box>
