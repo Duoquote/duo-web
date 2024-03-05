@@ -11,43 +11,7 @@ import Pages from "./pages";
 
 import { Outlet, useLocation } from "react-router-dom";
 
-import background from "./assets/images/background-minified.jpg";
-
-const Background = () => {
-
-  return (
-    <Box sx={{
-      position: "absolute",
-      top: 0,
-      left: 0,
-      width: "100%",
-      height: "100%",
-    }}>
-      <Box sx={{
-        position: "absolute",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-        width: "110%",
-        height: "110%",
-        backgroundImage: `url(${background})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        "&::before": {
-          content: '""',
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          backgroundColor: "rgba(0, 0, 0, 0.5)",
-        },
-      }} />
-    </Box>
-  )
-};
-
-const App = ({ isDarkMode }) => {
+const App = ({ isDarkMode, children }) => {
 
   const [theme, setTheme] = useState(isDarkMode ? themes.dark : themes.light);
   const location = useLocation();
@@ -98,31 +62,7 @@ const App = ({ isDarkMode }) => {
         },
       }} />
       <Header />
-      <Box sx={{
-        overflow: "hidden",
-        width: "100%",
-        height: "100%",
-        position: "absolute",
-      }}>
-        <Box style={{
-          top: location.pathname === "/" ? 0 : -100,
-          opacity: location.pathname === "/" ? 1 : 0,
-        }} sx={{
-          position: "relative",
-          width: "100%",
-          height: "100%",
-          transition: theme => theme.transitions.create(["top", "opacity"], {
-            duration: theme.transitions.duration.short,
-          }),
-        }}>
-          <Background />
-          {
-            location.pathname === "/" && (
-              <Pages.Main />
-            )
-          }
-        </Box>
-      </Box>
+      {children}
       <Outlet />
     </ThemeProvider>
   );

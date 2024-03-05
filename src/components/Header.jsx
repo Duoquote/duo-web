@@ -10,6 +10,10 @@ import {
 
 import { useNavigate, useLocation } from "react-router-dom";
 
+import { useTranslation } from "react-i18next";
+
+import { US, TR } from "country-flag-icons/react/3x2";
+
 import {
   MdHome,
 } from "react-icons/md";
@@ -17,6 +21,8 @@ import {
 import logo from "../assets/images/logo.svg";
 
 const Header = ({ }) => {
+
+  const { t, i18n } = useTranslation();
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -73,9 +79,18 @@ const Header = ({ }) => {
           }
         </Button>
         <Button onClick={() => navigate("/about")}>
-          About
+          {t("header.about")}
         </Button>
         <Box component="span" sx={{ flexGrow: 1 }} />
+        <Button onClick={() => i18n.changeLanguage(i18n.language === "en" ? "tr" : "en")}>
+          {
+            i18n.language === "en" ? (
+              <US title="English" width={24} height={24} />
+            ) : (
+              <TR title="Türkçe" width={24} height={24} />
+            )
+          }
+        </Button>
         {/* <Button color="inherit">Login</Button> */}
       </Toolbar>
     </AppBar>
