@@ -2,6 +2,7 @@ import React from "react";
 
 import {
   Box, Container, Paper, Typography, GlobalStyles,
+  useMediaQuery,
 } from "@mui/material";
 
 import pp from "../assets/images/pp.jpg";
@@ -12,6 +13,7 @@ import { useTranslation } from "react-i18next";
 const About = () => {
 
   const { t } = useTranslation();
+  const isMobile = useMediaQuery("(max-width: 600px)");
 
   return (
     <React.Fragment>
@@ -20,13 +22,19 @@ const About = () => {
         width: "100%",
         pt: 6,
       }}>
-        <Container maxWidth="md" sx={{ p: 4, height: "100%", display: "flex", flexDirection: "column" }}>
-          <Box>
+        <Container maxWidth="md" sx={{
+          p: 4,
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "100%"
+        }}>
+          <Box flex={1}>
             <Box sx={{
               background: `url(${pp}) no-repeat center center`,
               backgroundSize: "cover",
               height: 256,
-              width: 256,
+              width: isMobile ? "100%" : 256,
               float: "right",
               borderRadius: 1,
               ml: 2,
@@ -39,15 +47,21 @@ const About = () => {
               {t("about.description")}
             </Typography>
           </Box>
-          <Box sx={{ flexGrow: 1 }} />
           <Box sx={{
-            background: `url(${miau}) no-repeat center center`,
-            backgroundSize: "cover",
-            height: 256,
-            width: 256,
-            borderRadius: 1,
             alignSelf: "center",
-          }} />
+            flexShrink: 0,
+            pt: 8,
+            pb: 8,
+            width: "100%",
+          }}>
+            <Box sx={{
+              background: `url(${miau}) no-repeat center center`,
+              backgroundSize: "cover",
+              height: 256,
+              width: isMobile ? "100%" : 256,
+              borderRadius: 1,
+            }} />
+          </Box>
         </Container>
       </Box>
     </React.Fragment>
