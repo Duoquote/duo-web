@@ -52,7 +52,7 @@ const About = () => {
             flexShrink: 0,
             pt: 8,
             pb: 8,
-            width: "100%",
+            width: isMobile ? "100%" : "auto",
           }}>
             <Box sx={{
               background: `url(${miau}) no-repeat center center`,
