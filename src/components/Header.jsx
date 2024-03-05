@@ -81,6 +81,9 @@ const Header = ({ }) => {
         <Button onClick={() => navigate("/about")}>
           {t("header.about")}
         </Button>
+        <Button onClick={() => navigate("/bookmarks")}>
+          {t("header.bookmarks")}
+        </Button>
         <Box component="span" sx={{ flexGrow: 1 }} />
         <IconButton onClick={() => i18n.changeLanguage(i18n.language === "en" ? "tr" : "en")}>
           {

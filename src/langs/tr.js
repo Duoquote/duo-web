@@ -1,6 +1,7 @@
 export const tr = {
   header: {
     about: "Hakkımda",
+    bookmarks: "Pinler",
   },
   about: {
     title: "Hakkımda",

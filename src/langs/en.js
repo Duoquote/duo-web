@@ -1,6 +1,7 @@
 export const en = {
   header: {
     about: "About",
+    bookmarks: "Bookmarks",
   },
   about: {
     title: "About",

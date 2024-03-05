@@ -38,6 +38,8 @@ i18n
     }
   });
 
+i18n.on("languageChanged", lng => { document.documentElement.lang = lng; });
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -50,6 +52,10 @@ const router = createBrowserRouter([
       {
         path: "/about",
         element: <Pages.About />,
+      },
+      {
+        path: "/bookmarks",
+        element: <Pages.Bookmarks />,
       },
     ],
   },
