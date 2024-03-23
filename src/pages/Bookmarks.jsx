@@ -74,6 +74,11 @@ const Bookmarks = () => {
               url="https://www.photopea.com/"
               description="A Photoshop-like online image editor."
             />
+            <Pin
+              name="Eraser"
+              url="https://www.eraser.io/"
+              description="Documents & diagrams editor."
+            />
           </Grid>
         </Container>
       </Box>
