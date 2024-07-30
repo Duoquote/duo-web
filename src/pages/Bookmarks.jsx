@@ -50,6 +50,11 @@ const Bookmarks = () => {
         }}>
           <Grid container spacing={2}>
             <Pin
+              name="Map Tiles View"
+              url="https://duoquote.github.io/map-tiles-view/"
+              description="A tool to show x, y, z values of tiles on map."
+            />
+            <Pin
               name="BBOX Finder"
               url="http://bboxfinder.com/"
               description="A tool to get bounding boxes."
