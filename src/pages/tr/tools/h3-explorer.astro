@@ -1,0 +1,32 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import GridBackground from "../../../components/GridBackground";
+import Header from "../../../components/Header";
+import H3Explorer from "../../../components/tools/H3Explorer";
+import { t, getLocalizedPath } from "../../../lib/i18n";
+
+const locale = "tr" as const;
+---
+
+<Layout
+  title={t(locale, "seo.h3.title")}
+  description={t(locale, "seo.h3.description")}
+  locale={locale}
+>
+  <GridBackground client:load />
+  <Header client:load locale={locale} />
+  <main class="relative z-10 mx-auto max-w-5xl px-4 pt-20 pb-4 md:px-6 h-svh flex flex-col">
+    <a href={getLocalizedPath(locale, "/tools")} class="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
+      {t(locale, "h3.backToTools")}
+    </a>
+    <h1 class="mb-2 text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+      {t(locale, "h3.heading")}
+    </h1>
+    <p class="mb-6 text-sm text-muted-foreground">
+      {t(locale, "h3.description")}
+    </p>
+    <div class="flex-1 min-h-0">
+      <H3Explorer client:only="react" locale={locale} />
+    </div>
+  </main>
+</Layout>

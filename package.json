@@ -1,37 +1,36 @@
 {
-  "name": "vite",
-  "version": "5.0.0",
+  "name": "guvendegirmenci",
+  "type": "module",
   "private": true,
   "scripts": {
-    "dev": "vite --host=0.0.0.0 --open",
-    "build": "vite build",
-    "serve": "vite preview"
-  },
-  "dependencies": {
-    "@emotion/react": "^11.10.5",
-    "@emotion/styled": "^11.10.5",
-    "@monaco-editor/react": "^4.4.6",
-    "@mui/material": "^5.11.6",
-    "@reduxjs/toolkit": "^1.9.1",
-    "@turf/turf": "^6.5.0",
-    "country-flag-icons": "^1.5.9",
-    "i18next": "^23.10.0",
-    "i18next-browser-languagedetector": "^7.2.0",
-    "leaflet": "^1.9.3",
-    "lodash": "^4.17.21",
-    "re-resizable": "^6.9.9",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-i18next": "^14.0.5",
-    "react-icons": "^4.7.1",
-    "react-leaflet": "^4.2.0",
-    "react-redux": "^8.0.5",
-    "react-router-dom": "^6.8.0",
-    "redux": "^4.2.0"
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^3.0.1",
-    "vite": "^4.0.4"
+    "@types/bun": "latest",
+    "@types/leaflet": "^1.9.21",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3"
   },
-  "packageManager": "yarn@4.1.0"
+  "dependencies": {
+    "@astrojs/react": "^4.4.2",
+    "@astrojs/sitemap": "^3.7.0",
+    "@fontsource/google-sans": "^5.2.1",
+    "@tailwindcss/vite": "^4.2.1",
+    "astro": "^5.18.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "h3-js": "^4.4.0",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.575.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-icons": "^5.5.0",
+    "react-leaflet": "^5.0.0",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss": "^4.2.1",
+    "tw-animate-css": "^1.4.0"
+  }
 }

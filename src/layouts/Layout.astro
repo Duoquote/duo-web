@@ -1,0 +1,112 @@
+---
+import { ViewTransitions } from "astro:transitions";
+import { t, getLocalizedPath, type Locale } from "../lib/i18n";
+import "../styles/globals.css";
+
+interface Props {
+  title: string;
+  description?: string;
+  ogImage?: string;
+  noindex?: boolean;
+  locale?: Locale;
+}
+
+const locale: Locale = (Astro.props.locale ?? Astro.currentLocale ?? "en") as Locale;
+
+const {
+  title,
+  description = t(locale, "seo.defaultDescription"),
+  ogImage = "/og.jpg",
+  noindex = false,
+} = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const ogImageURL = new URL(ogImage, Astro.site);
+
+const ogLocale = locale === "tr" ? "tr_TR" : "en_US";
+
+const currentPath = Astro.url.pathname;
+const enPath = getLocalizedPath("en", currentPath);
+const trPath = getLocalizedPath("tr", currentPath);
+const enURL = new URL(enPath, Astro.site);
+const trURL = new URL(trPath, Astro.site);
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: "Güven Değirmenci",
+  url: "https://dq.ms",
+  jobTitle: "Managing Partner",
+  worksFor: {
+    "@type": "Organization",
+    name: "Next Geo",
+  },
+  sameAs: [
+    "https://github.com/duoquote",
+    "https://www.linkedin.com/in/duoquote/",
+    "https://stackoverflow.com/users/7493063/guven-degirmenci",
+    "https://www.instagram.com/duoquote/",
+  ],
+  knowsAbout: [
+    "React", "Node.js", "Python", "Django", "PostgreSQL",
+    "ClickHouse", "Docker", "GIS", "Leaflet", "Linux",
+  ],
+  inLanguage: locale,
+};
+---
+
+<!doctype html>
+<html lang={locale} class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- SEO -->
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <meta name="author" content="Güven Değirmenci" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- hreflang -->
+    <link rel="alternate" hreflang="en" href={enURL} />
+    <link rel="alternate" hreflang="tr" href={trURL} />
+    <link rel="alternate" hreflang="x-default" href={enURL} />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+
+    <!-- Theme -->
+    <meta name="theme-color" content="#1a1a1a" />
+    <meta name="color-scheme" content="dark" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImageURL} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Güven Değirmenci" />
+    <meta property="og:locale" content={ogLocale} />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageURL} />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+    <!-- Seamless page transitions -->
+    <ViewTransitions />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

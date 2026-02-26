@@ -1,0 +1,26 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import GridBackground from "../../components/GridBackground";
+import Header from "../../components/Header";
+import Hero from "../../components/Hero";
+import AboutSection from "../../components/AboutSection";
+import SocialsSection from "../../components/SocialsSection";
+import { t } from "../../lib/i18n";
+import { getYearsOfExperience } from "../../lib/years";
+
+const years = getYearsOfExperience();
+---
+
+<Layout
+  title={t("tr", "seo.home.title")}
+  description={t("tr", "seo.home.description", { years })}
+  locale="tr"
+>
+  <GridBackground client:load />
+  <Header client:load locale="tr" />
+  <main>
+    <Hero client:load locale="tr" />
+    <AboutSection client:load locale="tr" />
+    <SocialsSection client:load locale="tr" />
+  </main>
+</Layout>

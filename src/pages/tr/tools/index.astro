@@ -1,0 +1,50 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import GridBackground from "../../../components/GridBackground";
+import Header from "../../../components/Header";
+import { t, getLocalizedPath } from "../../../lib/i18n";
+
+const locale = "tr" as const;
+const tools = [
+  {
+    name: t(locale, "tools.h3.name"),
+    description: t(locale, "tools.h3.description"),
+    href: getLocalizedPath(locale, "/tools/h3-explorer"),
+  },
+];
+---
+
+<Layout
+  title={t(locale, "seo.tools.title")}
+  description={t(locale, "seo.tools.description")}
+  locale={locale}
+>
+  <GridBackground client:load />
+  <Header client:load locale={locale} />
+  <main class="relative z-10 mx-auto max-w-5xl px-4 pt-20 pb-16 md:px-6">
+    <span class="mb-3 block text-xs font-semibold tracking-[0.1em] text-primary uppercase">
+      {t(locale, "tools.label")}
+    </span>
+    <h1 class="mb-2 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+      {t(locale, "tools.heading")}
+    </h1>
+    <p class="mb-10 max-w-lg text-base text-muted-foreground">
+      {t(locale, "tools.description")}
+    </p>
+
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {tools.map((tool) => (
+        <a
+          href={tool.href}
+          class="group border border-border bg-card p-5 transition-all hover:border-primary/20 hover:bg-card/80 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
+        >
+          <h2 class="mb-1.5 text-sm font-semibold text-card-foreground">
+            {tool.name}
+          </h2>
+          <p class="text-sm text-muted-foreground">{tool.description}</p>
+          <div class="mt-4 h-0.5 w-8 bg-primary/30 transition-all group-hover:w-12 group-hover:bg-primary/60" />
+        </a>
+      ))}
+    </div>
+  </main>
+</Layout>
