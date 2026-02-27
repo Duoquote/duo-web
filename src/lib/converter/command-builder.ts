@@ -58,9 +58,10 @@ function buildVideoArgs(
     args.push("-preset", "medium");
   }
 
-  if (s.resolution !== "original") {
-    const [w] = s.resolution.split("x");
-    args.push("-vf", `scale=${w}:-2`);
+  if (s.scale === "pixel") {
+    args.push("-vf", "scale=80:80:force_original_aspect_ratio=decrease,scale=1280:720:force_original_aspect_ratio=increase:flags=neighbor");
+  } else if (s.scale !== "1") {
+    args.push("-vf", `scale=trunc(iw*${s.scale}/2)*2:trunc(ih*${s.scale}/2)*2`);
   }
 
   if (s.frameRate !== "original") {
@@ -118,9 +119,10 @@ function buildGifArgs(s: VideoAdvancedSettings): string[] {
   const args: string[] = [];
   const filterParts: string[] = [];
 
-  if (s.resolution !== "original") {
-    const [w] = s.resolution.split("x");
-    filterParts.push(`scale=${w}:-1:flags=lanczos`);
+  if (s.scale === "pixel") {
+    filterParts.push("scale=80:80:force_original_aspect_ratio=decrease,scale=1280:720:force_original_aspect_ratio=increase:flags=neighbor");
+  } else if (s.scale !== "1") {
+    filterParts.push(`scale=trunc(iw*${s.scale}/2)*2:trunc(ih*${s.scale}/2)*2:flags=lanczos`);
   }
 
   if (s.frameRate !== "original") {

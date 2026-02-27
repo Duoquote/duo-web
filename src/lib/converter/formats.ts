@@ -23,7 +23,7 @@ export interface VideoAdvancedSettings {
   crf: number;
   videoBitrate: string;
   audioBitrate: string;
-  resolution: string;
+  scale: string;
   frameRate: string;
   audioCodec: string;
 }
@@ -173,7 +173,7 @@ export function getDefaultVideoSettings(): VideoAdvancedSettings {
     crf: 23,
     videoBitrate: "2M",
     audioBitrate: "128k",
-    resolution: "original",
+    scale: "1",
     frameRate: "original",
     audioCodec: "aac",
   };

@@ -248,6 +248,7 @@ function converterReducer(
           crf: pv.crf,
           videoBitrate: pv.videoBitrate,
           audioBitrate: pv.audioBitrate,
+          scale: action.preset === "pixel" ? "pixel" : "1",
         },
       };
     }
@@ -497,20 +498,25 @@ const selectClass =
 function FormatSelector({
   outputFormatId,
   codecId,
+  scale,
   onFormatChange,
   onCodecChange,
+  onScaleChange,
   locale,
 }: {
   outputFormatId: string;
   codecId: string;
+  scale: string;
   onFormatChange: (id: string) => void;
   onCodecChange: (id: string) => void;
+  onScaleChange: (value: string) => void;
   locale: Locale;
 }) {
   const format = getFormatById(outputFormatId);
+  const isVideo = format && (format.type === "video" || format.type === "image");
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className={cn("grid gap-3", isVideo ? "grid-cols-3" : "grid-cols-2")}>
       <div>
         <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
           {t(locale, "converter.outputFormat")}
@@ -560,6 +566,23 @@ function FormatSelector({
           ))}
         </select>
       </div>
+      {isVideo && (
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+            {t(locale, "converter.scale")}
+          </label>
+          <select
+            value={scale}
+            onChange={(e) => onScaleChange(e.target.value)}
+            className={selectClass}
+          >
+            <option value="1">1x</option>
+            <option value="0.75">0.75x</option>
+            <option value="0.5">0.5x</option>
+            <option value="0.33">0.33x</option>
+          </select>
+        </div>
+      )}
     </div>
   );
 }
@@ -601,6 +624,18 @@ function QualityPresets({
             {t(locale, opt.labelKey as any)}
           </button>
         ))}
+        <button
+          onClick={() => onPresetChange("pixel")}
+          className={cn(
+            "-ml-px border px-3 py-2 text-sm transition-all",
+            preset === "pixel"
+              ? "relative z-10 border-primary bg-primary text-primary-foreground"
+              : "border-border bg-card text-muted-foreground hover:text-foreground",
+          )}
+          title="Pixel hell"
+        >
+          :)
+        </button>
       </div>
       {preset === "custom" && (
         <p className="mt-1.5 text-xs italic text-muted-foreground">
@@ -714,25 +749,6 @@ function VideoSettings({
                 {v}
               </option>
             ))}
-          </select>
-        </div>
-
-        {/* Resolution */}
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-            {t(locale, "converter.resolution")}
-          </label>
-          <select
-            value={settings.resolution}
-            onChange={(e) => onChange("resolution", e.target.value)}
-            className={selectClass}
-          >
-            <option value="original">
-              {t(locale, "converter.keepOriginal")}
-            </option>
-            <option value="1920x1080">1080p</option>
-            <option value="1280x720">720p</option>
-            <option value="854x480">480p</option>
           </select>
         </div>
 
@@ -1198,9 +1214,13 @@ export default function Converter({
           <FormatSelector
             outputFormatId={state.outputFormatId}
             codecId={state.codecId}
+            scale={state.videoSettings.scale}
             onFormatChange={handleFormatChange}
             onCodecChange={(id) =>
               dispatch({ type: "SET_CODEC", codecId: id })
+            }
+            onScaleChange={(value) =>
+              dispatch({ type: "SET_VIDEO_SETTING", key: "scale", value })
             }
             locale={locale}
           />
