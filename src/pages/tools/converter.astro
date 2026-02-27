@@ -1,0 +1,33 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import GridBackground from "../../components/GridBackground";
+import Header from "../../components/Header";
+import Converter from "../../components/tools/Converter";
+import { t, getLocalizedPath } from "../../lib/i18n";
+
+const locale = "en" as const;
+---
+
+<Layout
+  title={t(locale, "seo.converter.title")}
+  description={t(locale, "seo.converter.description")}
+  locale={locale}
+>
+  <GridBackground client:load />
+  <Header client:load locale={locale} />
+  <main class="relative z-10 mx-auto max-w-5xl px-4 pt-20 pb-16 md:px-6">
+    <a
+      href={getLocalizedPath(locale, "/tools")}
+      class="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+    >
+      {t(locale, "converter.backToTools")}
+    </a>
+    <h1 class="mb-2 text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+      {t(locale, "converter.heading")}
+    </h1>
+    <p class="mb-6 text-sm text-muted-foreground">
+      {t(locale, "converter.description")}
+    </p>
+    <Converter client:only="react" locale={locale} />
+  </main>
+</Layout>

@@ -41,6 +41,11 @@ const translations = {
     "tools.h3.name": "H3 Explorer",
     "tools.h3.description": "Visualize H3 hex cells on an interactive map.",
 
+    // Converter tool listing
+    "tools.converter.name": "File Converter",
+    "tools.converter.description":
+      "Convert video and audio files in your browser.",
+
     // H3 Explorer
     "h3.backToTools": "← Back to tools",
     "h3.heading": "H3 Explorer",
@@ -49,6 +54,56 @@ const translations = {
     "h3.placeholderDecimal": "e.g. 622236750694711295",
     "h3.errorEmpty": "Enter an H3 index",
     "h3.errorInvalid": "Invalid H3 index",
+
+    // Converter
+    "converter.backToTools": "← Back to tools",
+    "converter.heading": "File Converter",
+    "converter.description":
+      "Convert video and audio files entirely in your browser. No upload, no server.",
+    "converter.dropzone": "Drop a file here or click to browse",
+    "converter.dropzoneActive": "Drop it!",
+    "converter.fileSize": "Size",
+    "converter.fileType": "Type",
+    "converter.fileSizeWarning":
+      "Files over 50 MB may cause performance issues or fail.",
+    "converter.outputFormat": "Output format",
+    "converter.codec": "Codec",
+    "converter.quality": "Quality",
+    "converter.balanced": "Balanced",
+    "converter.small": "Small",
+    "converter.custom": "Custom",
+    "converter.advanced": "Advanced settings",
+    "converter.rateControl": "Rate control",
+    "converter.crf": "CRF",
+    "converter.videoBitrate": "Video bitrate",
+    "converter.audioBitrate": "Audio bitrate",
+    "converter.resolution": "Resolution",
+    "converter.frameRate": "Frame rate",
+    "converter.audioCodec": "Audio codec",
+    "converter.sampleRate": "Sample rate",
+    "converter.channels": "Channels",
+    "converter.keepOriginal": "Keep original",
+    "converter.mono": "Mono",
+    "converter.stereo": "Stereo",
+    "converter.none": "None",
+    "converter.copy": "Copy (no re-encode)",
+    "converter.convert": "Convert",
+    "converter.converting": "Converting...",
+    "converter.cancel": "Cancel",
+    "converter.loadingFfmpeg": "Loading FFmpeg...",
+    "converter.download": "Download",
+    "converter.outputSize": "Output size",
+    "converter.error": "Conversion failed",
+    "converter.convertAnother": "Convert another",
+    "converter.removeFile": "Remove",
+    "converter.slowNotice":
+      "Conversion runs entirely in your browser via WebAssembly — this is slower than native and may take a while for large files. This is normal.",
+
+    // SEO — Converter
+    "seo.converter.title":
+      "File Converter — Convert Video & Audio in Your Browser",
+    "seo.converter.description":
+      "Free online file converter. Convert MP4, WebM, MKV, MP3, AAC, GIF and more entirely in your browser with ffmpeg.wasm. No upload required.",
 
     // 404
     "404.title": "404 — Page Not Found",
@@ -115,6 +170,11 @@ const translations = {
     "tools.h3.description":
       "H3 altıgen hücrelerini interaktif haritada görselleştirin.",
 
+    // Converter tool listing
+    "tools.converter.name": "Dosya Dönüştürücü",
+    "tools.converter.description":
+      "Video ve ses dosyalarını tarayıcınızda dönüştürün.",
+
     // H3 Explorer
     "h3.backToTools": "← Araçlara dön",
     "h3.heading": "H3 Gezgini",
@@ -124,6 +184,56 @@ const translations = {
     "h3.placeholderDecimal": "örn. 622236750694711295",
     "h3.errorEmpty": "Bir H3 indeksi girin",
     "h3.errorInvalid": "Geçersiz H3 indeksi",
+
+    // Converter
+    "converter.backToTools": "← Araçlara dön",
+    "converter.heading": "Dosya Dönüştürücü",
+    "converter.description":
+      "Video ve ses dosyalarını tamamen tarayıcınızda dönüştürün. Yükleme yok, sunucu yok.",
+    "converter.dropzone": "Bir dosya sürükleyin veya tıklayıp seçin",
+    "converter.dropzoneActive": "Bırakın!",
+    "converter.fileSize": "Boyut",
+    "converter.fileType": "Tür",
+    "converter.fileSizeWarning":
+      "50 MB üzeri dosyalar performans sorunlarına yol açabilir veya başarısız olabilir.",
+    "converter.outputFormat": "Çıktı formatı",
+    "converter.codec": "Kodek",
+    "converter.quality": "Kalite",
+    "converter.balanced": "Dengeli",
+    "converter.small": "Küçük",
+    "converter.custom": "Özel",
+    "converter.advanced": "Gelişmiş ayarlar",
+    "converter.rateControl": "Bit hızı kontrolü",
+    "converter.crf": "CRF",
+    "converter.videoBitrate": "Video bit hızı",
+    "converter.audioBitrate": "Ses bit hızı",
+    "converter.resolution": "Çözünürlük",
+    "converter.frameRate": "Kare hızı",
+    "converter.audioCodec": "Ses kodek",
+    "converter.sampleRate": "Örnekleme hızı",
+    "converter.channels": "Kanallar",
+    "converter.keepOriginal": "Orijinali koru",
+    "converter.mono": "Mono",
+    "converter.stereo": "Stereo",
+    "converter.none": "Yok",
+    "converter.copy": "Kopyala (yeniden kodlama yok)",
+    "converter.convert": "Dönüştür",
+    "converter.converting": "Dönüştürülüyor...",
+    "converter.cancel": "İptal",
+    "converter.loadingFfmpeg": "FFmpeg yükleniyor...",
+    "converter.download": "İndir",
+    "converter.outputSize": "Çıktı boyutu",
+    "converter.error": "Dönüştürme başarısız",
+    "converter.convertAnother": "Başka bir dosya dönüştür",
+    "converter.removeFile": "Kaldır",
+    "converter.slowNotice":
+      "Dönüştürme tamamen tarayıcınızda WebAssembly ile çalışır — bu, yerel işlemden daha yavaştır ve büyük dosyalarda zaman alabilir. Bu normaldir.",
+
+    // SEO — Converter
+    "seo.converter.title":
+      "Dosya Dönüştürücü — Tarayıcınızda Video ve Ses Dönüştürün",
+    "seo.converter.description":
+      "Ücretsiz çevrimiçi dosya dönüştürücü. MP4, WebM, MKV, MP3, AAC, GIF ve daha fazlasını ffmpeg.wasm ile tamamen tarayıcınızda dönüştürün. Yükleme gerekmez.",
 
     // 404
     "404.title": "404 — Sayfa Bulunamadı",
