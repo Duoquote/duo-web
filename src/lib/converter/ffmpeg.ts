@@ -7,8 +7,39 @@ const CORE_VERSION = "0.12.10";
 const CORE_CDN = `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${CORE_VERSION}/dist/esm`;
 const WORKER_CDN = `https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@${FFMPEG_VERSION}/dist/esm/worker.js`;
 
+const CACHE_NAME = `ffmpeg-${CORE_VERSION}`;
+
 export type ProgressCallback = (progress: number) => void;
 export type LogCallback = (message: string) => void;
+
+// ---------------------------------------------------------------------------
+// Cache API helpers — persist CDN resources so they survive browser eviction
+// ---------------------------------------------------------------------------
+
+async function cachedFetch(url: string): Promise<string> {
+  if (typeof caches === "undefined") return url;
+
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(url);
+    if (cached) {
+      const blob = await cached.blob();
+      return URL.createObjectURL(blob);
+    }
+
+    const resp = await fetch(url);
+    if (resp.ok) {
+      // Clone before consuming — put expects an unconsumed Response
+      await cache.put(url, resp.clone());
+      const blob = await resp.blob();
+      return URL.createObjectURL(blob);
+    }
+  } catch {
+    // Cache API unavailable or network error — fall back to direct URL
+  }
+
+  return url;
+}
 
 // ---------------------------------------------------------------------------
 // Shared load config
@@ -21,10 +52,13 @@ function makeWorkerURL(): string {
   return URL.createObjectURL(workerBlob);
 }
 
-const loadConfig = {
-  coreURL: `${CORE_CDN}/ffmpeg-core.js`,
-  wasmURL: `${CORE_CDN}/ffmpeg-core.wasm`,
-};
+async function getLoadConfig() {
+  const [coreURL, wasmURL] = await Promise.all([
+    cachedFetch(`${CORE_CDN}/ffmpeg-core.js`),
+    cachedFetch(`${CORE_CDN}/ffmpeg-core.wasm`),
+  ]);
+  return { coreURL, wasmURL };
+}
 
 // ---------------------------------------------------------------------------
 // Singleton (used for preloading / single-file fallback)
@@ -42,7 +76,8 @@ export async function getFFmpeg(onLog?: LogCallback): Promise<FFmpeg> {
     ffmpegInstance.on("log", ({ message }) => onLog(message));
   }
 
-  await ffmpegInstance.load({ classWorkerURL: makeWorkerURL(), ...loadConfig });
+  const config = await getLoadConfig();
+  await ffmpegInstance.load({ classWorkerURL: makeWorkerURL(), ...config });
   loaded = true;
 
   return ffmpegInstance;
@@ -60,7 +95,8 @@ const activeWorkers = new Set<FFmpeg>();
 
 export async function createWorker(): Promise<FFmpeg> {
   const instance = new FFmpeg();
-  await instance.load({ classWorkerURL: makeWorkerURL(), ...loadConfig });
+  const config = await getLoadConfig();
+  await instance.load({ classWorkerURL: makeWorkerURL(), ...config });
   activeWorkers.add(instance);
   return instance;
 }
