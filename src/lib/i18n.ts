@@ -97,6 +97,11 @@ const translations = {
     "converter.error": "Conversion failed",
     "converter.convertAnother": "Convert another",
     "converter.removeFile": "Remove",
+    "converter.addMore": "Add more files",
+    "converter.clearAll": "Clear all",
+    "converter.downloadAll": "Download All",
+    "converter.completed": "completed",
+    "converter.failed": "failed",
     "converter.slowNotice":
       "Conversion runs entirely in your browser via WebAssembly — this is slower than native and may take a while for large files. This is normal.",
 
@@ -241,6 +246,11 @@ const translations = {
     "converter.error": "Dönüştürme başarısız",
     "converter.convertAnother": "Başka bir dosya dönüştür",
     "converter.removeFile": "Kaldır",
+    "converter.addMore": "Daha fazla dosya ekle",
+    "converter.clearAll": "Tümünü temizle",
+    "converter.downloadAll": "Tümünü İndir",
+    "converter.completed": "tamamlandı",
+    "converter.failed": "başarısız",
     "converter.slowNotice":
       "Dönüştürme tamamen tarayıcınızda WebAssembly ile çalışır — bu, yerel işlemden daha yavaştır ve büyük dosyalarda zaman alabilir. Bu normaldir.",
 

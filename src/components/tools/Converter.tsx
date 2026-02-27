@@ -15,6 +15,8 @@ import {
   RotateCcw,
   Link,
   Unlink,
+  Check,
+  Plus,
 } from "lucide-react";
 import type { Locale } from "../../lib/i18n";
 import { t } from "../../lib/i18n";
@@ -94,15 +96,56 @@ function computeTargetDims(
   return { targetWidth: String(w), targetHeight: String(h) };
 }
 
+function triggerDownload(data: Uint8Array, fileName: string): void {
+  const blob = new Blob([data]);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+let fileIdCounter = 0;
+
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
 
-interface ConverterState {
-  file: File | null;
-  fileSizeWarning: boolean;
+type FileStatus = "pending" | "converting" | "completed" | "error";
+
+interface FileEntry {
+  id: string;
+  file: File;
+  sizeWarning: boolean;
   sourceWidth: number | null;
   sourceHeight: number | null;
+  status: FileStatus;
+  progress: number;
+  error: string | null;
+  outputData: Uint8Array | null;
+  outputSize: number;
+  outputFileName: string;
+}
+
+function createFileEntry(file: File): FileEntry {
+  return {
+    id: String(++fileIdCounter),
+    file,
+    sizeWarning: file.size > 50 * 1024 * 1024,
+    sourceWidth: null,
+    sourceHeight: null,
+    status: "pending",
+    progress: 0,
+    error: null,
+    outputData: null,
+    outputSize: 0,
+    outputFileName: "",
+  };
+}
+
+interface ConverterState {
+  files: FileEntry[];
   lockAspectRatio: boolean;
   inputFormat: string;
   outputFormatId: string;
@@ -113,16 +156,20 @@ interface ConverterState {
   advancedOpen: boolean;
   ffmpegLoading: boolean;
   converting: boolean;
-  progress: number;
+  currentFileIndex: number;
   error: string | null;
-  outputData: Uint8Array | null;
-  outputSize: number;
-  outputFileName: string;
 }
 
 type ConverterAction =
-  | { type: "SET_FILE"; file: File }
-  | { type: "CLEAR_FILE" }
+  | { type: "ADD_FILES"; files: File[] }
+  | { type: "REMOVE_FILE"; id: string }
+  | { type: "CLEAR_FILES" }
+  | {
+      type: "SET_FILE_DIMENSIONS";
+      id: string;
+      width: number;
+      height: number;
+    }
   | { type: "SET_OUTPUT_FORMAT"; formatId: string }
   | { type: "SET_CODEC"; codecId: string }
   | { type: "SET_PRESET"; preset: QualityPreset }
@@ -138,24 +185,25 @@ type ConverterAction =
     }
   | { type: "TOGGLE_ADVANCED" }
   | { type: "FFMPEG_LOADING" }
-  | { type: "CONVERT_START" }
-  | { type: "CONVERT_PROGRESS"; progress: number }
+  | { type: "CONVERT_FILE_START"; index: number }
+  | { type: "CONVERT_FILE_PROGRESS"; index: number; progress: number }
   | {
-      type: "CONVERT_COMPLETE";
+      type: "CONVERT_FILE_COMPLETE";
+      index: number;
       data: Uint8Array;
       size: number;
       fileName: string;
     }
+  | { type: "CONVERT_FILE_ERROR"; index: number; error: string }
   | { type: "CONVERT_ERROR"; error: string }
   | { type: "CONVERT_CANCEL" }
-  | { type: "SET_SOURCE_DIMENSIONS"; width: number; height: number }
   | { type: "TOGGLE_ASPECT_LOCK" }
   | {
       type: "SET_TARGET_DIMENSION";
       key: "targetWidth" | "targetHeight";
       value: string;
     }
-  | { type: "RESET_RESULT" }
+  | { type: "RESET_ALL" }
   | {
       type: "SYNC_HASH";
       inputFormat: string;
@@ -164,10 +212,7 @@ type ConverterAction =
 
 function getInitialState(): ConverterState {
   return {
-    file: null,
-    fileSizeWarning: false,
-    sourceWidth: null,
-    sourceHeight: null,
+    files: [],
     lockAspectRatio: true,
     inputFormat: "x",
     outputFormatId: "mp4",
@@ -178,12 +223,17 @@ function getInitialState(): ConverterState {
     advancedOpen: false,
     ffmpegLoading: false,
     converting: false,
-    progress: 0,
+    currentFileIndex: 0,
     error: null,
-    outputData: null,
-    outputSize: 0,
-    outputFileName: "",
   };
+}
+
+function updateFileAt(
+  files: FileEntry[],
+  index: number,
+  patch: Partial<FileEntry>,
+): FileEntry[] {
+  return files.map((f, i) => (i === index ? { ...f, ...patch } : f));
 }
 
 function converterReducer(
@@ -191,43 +241,54 @@ function converterReducer(
   action: ConverterAction,
 ): ConverterState {
   switch (action.type) {
-    case "SET_FILE": {
-      const sizeWarning = action.file.size > 50 * 1024 * 1024;
+    case "ADD_FILES": {
+      const newEntries = action.files.map(createFileEntry);
       return {
         ...state,
-        file: action.file,
-        fileSizeWarning: sizeWarning,
-        sourceWidth: null,
-        sourceHeight: null,
-        outputData: null,
-        outputSize: 0,
-        outputFileName: "",
+        files: [...state.files, ...newEntries],
         error: null,
-        videoSettings: {
-          ...state.videoSettings,
-          targetWidth: "",
-          targetHeight: "",
-        },
       };
     }
 
-    case "CLEAR_FILE":
+    case "REMOVE_FILE":
       return {
         ...state,
-        file: null,
-        fileSizeWarning: false,
-        sourceWidth: null,
-        sourceHeight: null,
-        outputData: null,
-        outputSize: 0,
-        outputFileName: "",
-        error: null,
-        videoSettings: {
-          ...state.videoSettings,
-          targetWidth: "",
-          targetHeight: "",
-        },
+        files: state.files.filter((f) => f.id !== action.id),
       };
+
+    case "CLEAR_FILES":
+      return {
+        ...state,
+        files: [],
+        error: null,
+      };
+
+    case "SET_FILE_DIMENSIONS": {
+      const files = state.files.map((f) =>
+        f.id === action.id
+          ? { ...f, sourceWidth: action.width, sourceHeight: action.height }
+          : f,
+      );
+      // Update target dims from first file with dimensions
+      const firstDims = files.find((f) => f.sourceWidth !== null);
+      if (firstDims && firstDims.sourceWidth && firstDims.sourceHeight) {
+        const dims = computeTargetDims(
+          firstDims.sourceWidth,
+          firstDims.sourceHeight,
+          state.videoSettings.scale,
+        );
+        return {
+          ...state,
+          files,
+          videoSettings: {
+            ...state.videoSettings,
+            targetWidth: dims.targetWidth,
+            targetHeight: dims.targetHeight,
+          },
+        };
+      }
+      return { ...state, files };
+    }
 
     case "SET_OUTPUT_FORMAT": {
       const format = getFormatById(action.formatId);
@@ -251,9 +312,10 @@ function converterReducer(
           }
         : getDefaultVideoSettings();
 
+      const firstDims = state.files.find((f) => f.sourceWidth !== null);
       const dims = computeTargetDims(
-        state.sourceWidth,
-        state.sourceHeight,
+        firstDims?.sourceWidth ?? null,
+        firstDims?.sourceHeight ?? null,
         newVideoSettings.scale,
       );
       newVideoSettings.targetWidth = dims.targetWidth;
@@ -270,8 +332,6 @@ function converterReducer(
               audioBitrate: presetValues.audioBitrate,
             }
           : getDefaultAudioSettings(),
-        outputData: null,
-        outputSize: 0,
         error: null,
       };
     }
@@ -323,9 +383,10 @@ function converterReducer(
 
       const isPixel = action.preset === "pixel";
       const newScale = isPixel ? "pixel" : "1";
+      const firstDims = state.files.find((f) => f.sourceWidth !== null);
       const presetDims = computeTargetDims(
-        state.sourceWidth,
-        state.sourceHeight,
+        firstDims?.sourceWidth ?? null,
+        firstDims?.sourceHeight ?? null,
         newScale,
       );
       return {
@@ -351,9 +412,10 @@ function converterReducer(
         [action.key]: action.value,
       };
       if (action.key === "scale") {
+        const firstDims = state.files.find((f) => f.sourceWidth !== null);
         const scaleDims = computeTargetDims(
-          state.sourceWidth,
-          state.sourceHeight,
+          firstDims?.sourceWidth ?? null,
+          firstDims?.sourceHeight ?? null,
           String(action.value),
         );
         updatedVideoSettings.targetWidth = scaleDims.targetWidth;
@@ -382,26 +444,46 @@ function converterReducer(
     case "FFMPEG_LOADING":
       return { ...state, ffmpegLoading: true, error: null };
 
-    case "CONVERT_START":
+    case "CONVERT_FILE_START":
       return {
         ...state,
         ffmpegLoading: false,
         converting: true,
-        progress: 0,
-        error: null,
+        currentFileIndex: action.index,
+        files: updateFileAt(state.files, action.index, {
+          status: "converting",
+          progress: 0,
+          error: null,
+        }),
       };
 
-    case "CONVERT_PROGRESS":
-      return { ...state, progress: action.progress };
-
-    case "CONVERT_COMPLETE":
+    case "CONVERT_FILE_PROGRESS":
       return {
         ...state,
-        converting: false,
-        progress: 100,
-        outputData: action.data,
-        outputSize: action.size,
-        outputFileName: action.fileName,
+        files: updateFileAt(state.files, action.index, {
+          progress: action.progress,
+        }),
+      };
+
+    case "CONVERT_FILE_COMPLETE":
+      return {
+        ...state,
+        files: updateFileAt(state.files, action.index, {
+          status: "completed",
+          progress: 100,
+          outputData: action.data,
+          outputSize: action.size,
+          outputFileName: action.fileName,
+        }),
+      };
+
+    case "CONVERT_FILE_ERROR":
+      return {
+        ...state,
+        files: updateFileAt(state.files, action.index, {
+          status: "error",
+          error: action.error,
+        }),
       };
 
     case "CONVERT_ERROR":
@@ -417,21 +499,21 @@ function converterReducer(
         ...state,
         ffmpegLoading: false,
         converting: false,
-        progress: 0,
+        files: state.files.map((f) =>
+          f.status === "converting"
+            ? { ...f, status: "pending" as FileStatus, progress: 0 }
+            : f,
+        ),
       };
 
-    case "RESET_RESULT":
+    case "RESET_ALL":
       return {
         ...state,
-        file: null,
-        fileSizeWarning: false,
-        sourceWidth: null,
-        sourceHeight: null,
-        outputData: null,
-        outputSize: 0,
-        outputFileName: "",
+        files: [],
         error: null,
-        progress: 0,
+        converting: false,
+        ffmpegLoading: false,
+        currentFileIndex: 0,
         videoSettings: {
           ...state.videoSettings,
           targetWidth: "",
@@ -439,28 +521,11 @@ function converterReducer(
         },
       };
 
-    case "SET_SOURCE_DIMENSIONS": {
-      const srcDims = computeTargetDims(
-        action.width,
-        action.height,
-        state.videoSettings.scale,
-      );
-      return {
-        ...state,
-        sourceWidth: action.width,
-        sourceHeight: action.height,
-        videoSettings: {
-          ...state.videoSettings,
-          targetWidth: srcDims.targetWidth,
-          targetHeight: srcDims.targetHeight,
-        },
-      };
-    }
-
     case "TOGGLE_ASPECT_LOCK":
       return { ...state, lockAspectRatio: !state.lockAspectRatio };
 
     case "SET_TARGET_DIMENSION": {
+      const firstDims = state.files.find((f) => f.sourceWidth !== null);
       const dimUpdate: Partial<VideoAdvancedSettings> = {
         [action.key]: action.value,
         scale: "custom",
@@ -468,13 +533,13 @@ function converterReducer(
 
       if (
         state.lockAspectRatio &&
-        state.sourceWidth &&
-        state.sourceHeight &&
+        firstDims?.sourceWidth &&
+        firstDims?.sourceHeight &&
         action.value !== ""
       ) {
         const v = parseInt(action.value);
         if (!isNaN(v) && v > 0) {
-          const ratio = state.sourceWidth / state.sourceHeight;
+          const ratio = firstDims.sourceWidth / firstDims.sourceHeight;
           if (action.key === "targetWidth") {
             dimUpdate.targetHeight = String(
               Math.round(v / ratio / 2) * 2,
@@ -518,11 +583,13 @@ function converterReducer(
 // ---------------------------------------------------------------------------
 
 function DropZone({
-  onFile,
+  onFiles,
   locale,
+  compact,
 }: {
-  onFile: (f: File) => void;
+  onFiles: (files: File[]) => void;
   locale: Locale;
+  compact?: boolean;
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -544,11 +611,34 @@ function DropZone({
       e.preventDefault();
       e.stopPropagation();
       setIsDragOver(false);
-      const file = e.dataTransfer.files[0];
-      if (file) onFile(file);
+      const files = Array.from(e.dataTransfer.files);
+      if (files.length > 0) onFiles(files);
     },
-    [onFile],
+    [onFiles],
   );
+
+  if (compact) {
+    return (
+      <button
+        onClick={() => inputRef.current?.click()}
+        className="flex w-full items-center justify-center gap-2 border border-dashed border-border/60 px-3 py-2 text-xs text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            const files = Array.from(e.target.files || []);
+            if (files.length > 0) onFiles(files);
+            e.target.value = "";
+          }}
+        />
+        <Plus className="h-3.5 w-3.5" />
+        {t(locale, "converter.addMore")}
+      </button>
+    );
+  }
 
   return (
     <div
@@ -571,10 +661,12 @@ function DropZone({
       <input
         ref={inputRef}
         type="file"
+        multiple
         className="hidden"
         onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) onFile(file);
+          const files = Array.from(e.target.files || []);
+          if (files.length > 0) onFiles(files);
+          e.target.value = "";
         }}
       />
       <Upload
@@ -603,62 +695,141 @@ function DropZone({
 }
 
 // ---------------------------------------------------------------------------
-// FileInfo
+// FileList
 // ---------------------------------------------------------------------------
 
-function FileInfo({
-  file,
-  sizeWarning,
-  sourceWidth,
-  sourceHeight,
+function FileListItem({
+  entry,
   onRemove,
+  onDownload,
+  disabled,
   locale,
 }: {
-  file: File;
-  sizeWarning: boolean;
-  sourceWidth: number | null;
-  sourceHeight: number | null;
+  entry: FileEntry;
   onRemove: () => void;
+  onDownload: () => void;
+  disabled: boolean;
   locale: Locale;
 }) {
-  const ext = file.name.split(".").pop()?.toUpperCase() || "?";
+  const ext = entry.file.name.split(".").pop()?.toUpperCase() || "?";
+
+  return (
+    <div className="flex items-center gap-3 px-3 py-2">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center bg-primary/10 font-mono text-[10px] font-bold text-primary">
+        {ext}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-foreground">
+          {entry.file.name}
+        </p>
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span>{formatFileSize(entry.file.size)}</span>
+          {entry.status === "completed" && (
+            <>
+              <span className="text-border">→</span>
+              <span className="font-mono text-foreground">
+                {formatFileSize(entry.outputSize)}
+              </span>
+            </>
+          )}
+          {entry.sizeWarning && (
+            <>
+              <span className="text-border">·</span>
+              <span className="text-destructive">
+                <AlertTriangle className="inline h-3 w-3" />
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Status indicator */}
+      <div className="flex shrink-0 items-center gap-1.5">
+        {entry.status === "converting" && (
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-xs text-primary">
+              {entry.progress}%
+            </span>
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          </div>
+        )}
+        {entry.status === "completed" && (
+          <button
+            onClick={onDownload}
+            className="p-1 text-emerald-500 transition-colors hover:text-emerald-400"
+            title={t(locale, "converter.download")}
+          >
+            <Download className="h-4 w-4" />
+          </button>
+        )}
+        {entry.status === "error" && (
+          <AlertTriangle className="h-4 w-4 text-destructive" />
+        )}
+        {entry.status === "pending" && (
+          <div className="h-4 w-4" /> // spacer
+        )}
+      </div>
+
+      {/* Remove button */}
+      <button
+        onClick={onRemove}
+        disabled={disabled}
+        className="shrink-0 p-1 text-muted-foreground/40 transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+        aria-label={t(locale, "converter.removeFile")}
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
+function FileList({
+  files,
+  onRemove,
+  onDownload,
+  onClear,
+  disabled,
+  locale,
+}: {
+  files: FileEntry[];
+  onRemove: (id: string) => void;
+  onDownload: (entry: FileEntry) => void;
+  onClear: () => void;
+  disabled: boolean;
+  locale: Locale;
+}) {
+  const hasSizeWarning = files.some((f) => f.sizeWarning);
 
   return (
     <div className="border border-border bg-card">
-      <div className="flex items-center gap-3 p-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-primary/10 font-mono text-[11px] font-bold text-primary">
-          {ext}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-foreground">
-            {file.name}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {formatFileSize(file.size)}
-            <span className="mx-1.5 text-border">·</span>
-            {file.type || "unknown"}
-            {sourceWidth !== null && sourceHeight !== null && (
-              <>
-                <span className="mx-1.5 text-border">·</span>
-                {sourceWidth}×{sourceHeight}
-              </>
-            )}
-          </p>
-        </div>
-        <button
-          onClick={onRemove}
-          className="shrink-0 p-1.5 text-muted-foreground transition-colors hover:text-foreground"
-          aria-label={t(locale, "converter.removeFile")}
-        >
-          <X className="h-4 w-4" />
-        </button>
+      <div className="divide-y divide-border/50">
+        {files.map((entry) => (
+          <FileListItem
+            key={entry.id}
+            entry={entry}
+            onRemove={() => onRemove(entry.id)}
+            onDownload={() => onDownload(entry)}
+            disabled={disabled}
+            locale={locale}
+          />
+        ))}
       </div>
-      {sizeWarning && (
+      {hasSizeWarning && (
         <div className="flex items-center gap-2 border-t border-border bg-destructive/5 px-3 py-2">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-destructive" />
           <p className="text-xs text-destructive">
             {t(locale, "converter.fileSizeWarning")}
           </p>
+        </div>
+      )}
+      {files.length > 1 && !disabled && (
+        <div className="border-t border-border/50 px-3 py-1.5">
+          <button
+            onClick={onClear}
+            className="text-xs text-muted-foreground/60 transition-colors hover:text-foreground"
+          >
+            {t(locale, "converter.clearAll")}
+          </button>
         </div>
       )}
     </div>
@@ -1118,28 +1289,38 @@ function ConversionArea({
   state,
   onConvert,
   onCancel,
-  onDownload,
+  onDownloadAll,
   onReset,
   locale,
 }: {
   state: ConverterState;
   onConvert: () => void;
   onCancel: () => void;
-  onDownload: () => void;
+  onDownloadAll: () => void;
   onReset: () => void;
   locale: Locale;
 }) {
-  if (state.outputData) {
+  const allDone = state.files.length > 0 && state.files.every(
+    (f) => f.status === "completed" || f.status === "error",
+  );
+  const completedCount = state.files.filter(
+    (f) => f.status === "completed",
+  ).length;
+  const errorCount = state.files.filter((f) => f.status === "error").length;
+
+  if (allDone) {
     return (
       <div className="space-y-3">
         <div className="flex items-center gap-3">
-          <button
-            onClick={onDownload}
-            className="flex flex-1 items-center justify-center gap-2 bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            <Download className="h-4 w-4" />
-            {t(locale, "converter.download")}
-          </button>
+          {completedCount > 0 && (
+            <button
+              onClick={onDownloadAll}
+              className="flex flex-1 items-center justify-center gap-2 bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              <Download className="h-4 w-4" />
+              {t(locale, "converter.downloadAll")}
+            </button>
+          )}
           <button
             onClick={onReset}
             className="flex items-center gap-2 border border-border px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -1149,10 +1330,18 @@ function ConversionArea({
           </button>
         </div>
         <p className="text-xs text-muted-foreground">
-          {t(locale, "converter.outputSize")}:{" "}
-          <span className="font-mono text-foreground">
-            {formatFileSize(state.outputSize)}
-          </span>
+          {completedCount > 0 && (
+            <span>
+              <Check className="mr-1 inline h-3 w-3 text-emerald-500" />
+              {completedCount} {t(locale, "converter.completed")}
+            </span>
+          )}
+          {errorCount > 0 && (
+            <span className="ml-3 text-destructive">
+              <AlertTriangle className="mr-1 inline h-3 w-3" />
+              {errorCount} {t(locale, "converter.failed")}
+            </span>
+          )}
         </p>
       </div>
     );
@@ -1167,7 +1356,7 @@ function ConversionArea({
         </div>
         <button
           onClick={onConvert}
-          disabled={!state.file}
+          disabled={state.files.length === 0}
           className="w-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {t(locale, "converter.convert")}
@@ -1188,16 +1377,22 @@ function ConversionArea({
   }
 
   if (state.converting) {
+    const currentFile = state.files[state.currentFileIndex];
+    const currentProgress = currentFile?.progress ?? 0;
+
     return (
       <div className="space-y-3">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">
-              {t(locale, "converter.converting")}
+              {t(locale, "converter.converting")}{" "}
+              <span className="font-mono text-foreground">
+                {state.currentFileIndex + 1}/{state.files.length}
+              </span>
             </span>
             <div className="flex items-center gap-3">
               <span className="font-mono text-sm text-foreground">
-                {state.progress}%
+                {currentProgress}%
               </span>
               <button
                 onClick={onCancel}
@@ -1210,10 +1405,15 @@ function ConversionArea({
           <div className="h-1.5 w-full bg-border">
             <div
               className="h-full bg-primary transition-all duration-300 ease-out"
-              style={{ width: `${state.progress}%` }}
+              style={{ width: `${currentProgress}%` }}
             />
           </div>
         </div>
+        {currentFile && (
+          <p className="truncate text-xs text-muted-foreground/70">
+            {currentFile.file.name}
+          </p>
+        )}
         <p className="text-xs text-muted-foreground/70">
           {t(locale, "converter.slowNotice")}
         </p>
@@ -1221,13 +1421,19 @@ function ConversionArea({
     );
   }
 
+  const pendingCount = state.files.filter(
+    (f) => f.status === "pending",
+  ).length;
+
   return (
     <button
       onClick={onConvert}
-      disabled={!state.file}
+      disabled={state.files.length === 0}
       className="w-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
     >
-      {t(locale, "converter.convert")}
+      {state.files.length > 1
+        ? `${t(locale, "converter.convert")} (${pendingCount})`
+        : t(locale, "converter.convert")}
     </button>
   );
 }
@@ -1246,7 +1452,7 @@ export default function Converter({
     undefined,
     getInitialState,
   );
-  const blobUrlRef = useRef<string | null>(null);
+  const cancelledRef = useRef(false);
 
   // Initialise from URL hash
   useEffect(() => {
@@ -1277,9 +1483,32 @@ export default function Converter({
   useEffect(() => {
     return () => {
       terminate();
-      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
     };
   }, []);
+
+  // Detect video dimensions for newly added files
+  const detectedIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const entry of state.files) {
+      if (
+        entry.sourceWidth === null &&
+        entry.status === "pending" &&
+        !detectedIdsRef.current.has(entry.id)
+      ) {
+        detectedIdsRef.current.add(entry.id);
+        getVideoDimensions(entry.file)
+          .then((dims) => {
+            dispatch({
+              type: "SET_FILE_DIMENSIONS",
+              id: entry.id,
+              width: dims.width,
+              height: dims.height,
+            });
+          })
+          .catch(() => {});
+      }
+    }
+  }, [state.files.length]);
 
   // Handlers
   const handleFormatChange = useCallback(
@@ -1291,7 +1520,10 @@ export default function Converter({
   );
 
   const handleConvert = useCallback(async () => {
-    if (!state.file) return;
+    const filesToConvert = state.files;
+    if (filesToConvert.length === 0) return;
+
+    cancelledRef.current = false;
 
     dispatch({ type: "FFMPEG_LOADING" });
     try {
@@ -1305,35 +1537,52 @@ export default function Converter({
       return;
     }
 
-    dispatch({ type: "CONVERT_START" });
-    try {
-      const format = getFormatById(state.outputFormatId)!;
-      const codec = getCodecById(format, state.codecId)!;
-      const settings =
-        format.type === "audio"
-          ? state.audioSettings
-          : state.videoSettings;
-      const args = buildFFmpegArgs({ format, codec, settings });
-      const outputName = getOutputFileName(
-        state.file.name,
-        format.extension,
-      );
+    for (let i = 0; i < filesToConvert.length; i++) {
+      if (cancelledRef.current) break;
 
-      const result = await convert(state.file, outputName, args, (p) =>
-        dispatch({ type: "CONVERT_PROGRESS", progress: p }),
-      );
+      const entry = filesToConvert[i];
+      if (entry.status === "completed") continue;
 
-      dispatch({
-        type: "CONVERT_COMPLETE",
-        data: result.data,
-        size: result.size,
-        fileName: outputName,
-      });
-    } catch (err) {
-      dispatch({ type: "CONVERT_ERROR", error: String(err) });
+      dispatch({ type: "CONVERT_FILE_START", index: i });
+
+      try {
+        const format = getFormatById(state.outputFormatId)!;
+        const codec = getCodecById(format, state.codecId)!;
+        const settings =
+          format.type === "audio"
+            ? state.audioSettings
+            : state.videoSettings;
+        const args = buildFFmpegArgs({ format, codec, settings });
+        const outputName = getOutputFileName(
+          entry.file.name,
+          format.extension,
+        );
+
+        const result = await convert(entry.file, outputName, args, (p) =>
+          dispatch({ type: "CONVERT_FILE_PROGRESS", index: i, progress: p }),
+        );
+
+        dispatch({
+          type: "CONVERT_FILE_COMPLETE",
+          index: i,
+          data: result.data,
+          size: result.size,
+          fileName: outputName,
+        });
+
+        // Auto-download on completion
+        triggerDownload(result.data, outputName);
+      } catch (err) {
+        if (cancelledRef.current) break;
+        dispatch({
+          type: "CONVERT_FILE_ERROR",
+          index: i,
+          error: String(err),
+        });
+      }
     }
   }, [
-    state.file,
+    state.files,
     state.outputFormatId,
     state.codecId,
     state.videoSettings,
@@ -1341,23 +1590,28 @@ export default function Converter({
   ]);
 
   const handleCancel = useCallback(() => {
+    cancelledRef.current = true;
     cancel();
     dispatch({ type: "CONVERT_CANCEL" });
   }, []);
 
-  const handleDownload = useCallback(() => {
-    if (!state.outputData) return;
-    if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+  const handleDownloadFile = useCallback((entry: FileEntry) => {
+    if (entry.outputData) {
+      triggerDownload(entry.outputData, entry.outputFileName);
+    }
+  }, []);
 
-    const blob = new Blob([state.outputData]);
-    const url = URL.createObjectURL(blob);
-    blobUrlRef.current = url;
+  const handleDownloadAll = useCallback(() => {
+    for (const entry of state.files) {
+      if (entry.outputData) {
+        triggerDownload(entry.outputData, entry.outputFileName);
+      }
+    }
+  }, [state.files]);
 
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = state.outputFileName;
-    a.click();
-  }, [state.outputData, state.outputFileName]);
+  const handleAddFiles = useCallback((newFiles: File[]) => {
+    dispatch({ type: "ADD_FILES", files: newFiles });
+  }, []);
 
   const format = getFormatById(state.outputFormatId);
   const isProcessing = state.ffmpegLoading || state.converting;
@@ -1365,39 +1619,40 @@ export default function Converter({
     format &&
     format.type !== "image" &&
     !["wav", "flac"].includes(format.id);
+  const allDone =
+    state.files.length > 0 &&
+    state.files.every(
+      (f) => f.status === "completed" || f.status === "error",
+    );
+  const firstDims = state.files.find((f) => f.sourceWidth !== null);
 
   return (
     <div className="space-y-4">
       {/* File input */}
-      {!state.file ? (
-        <DropZone
-          onFile={(f) => {
-            dispatch({ type: "SET_FILE", file: f });
-            getVideoDimensions(f)
-              .then((dims) =>
-                dispatch({
-                  type: "SET_SOURCE_DIMENSIONS",
-                  width: dims.width,
-                  height: dims.height,
-                }),
-              )
-              .catch(() => {});
-          }}
-          locale={locale}
-        />
+      {state.files.length === 0 ? (
+        <DropZone onFiles={handleAddFiles} locale={locale} />
       ) : (
-        <FileInfo
-          file={state.file}
-          sizeWarning={state.fileSizeWarning}
-          sourceWidth={state.sourceWidth}
-          sourceHeight={state.sourceHeight}
-          onRemove={() => dispatch({ type: "CLEAR_FILE" })}
-          locale={locale}
-        />
+        <>
+          <FileList
+            files={state.files}
+            onRemove={(id) => dispatch({ type: "REMOVE_FILE", id })}
+            onDownload={handleDownloadFile}
+            onClear={() => dispatch({ type: "CLEAR_FILES" })}
+            disabled={isProcessing}
+            locale={locale}
+          />
+          {!isProcessing && !allDone && (
+            <DropZone
+              onFiles={handleAddFiles}
+              locale={locale}
+              compact
+            />
+          )}
+        </>
       )}
 
       {/* Settings (hidden after conversion complete) */}
-      {!state.outputData && (
+      {!allDone && (
         <div
           className={cn(
             "space-y-3 transition-opacity",
@@ -1420,7 +1675,8 @@ export default function Converter({
 
           {format &&
             (format.type === "video" || format.type === "image") &&
-            state.sourceWidth !== null && (
+            firstDims?.sourceWidth !== undefined &&
+            firstDims?.sourceWidth !== null && (
               <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
@@ -1520,8 +1776,8 @@ export default function Converter({
         state={state}
         onConvert={handleConvert}
         onCancel={handleCancel}
-        onDownload={handleDownload}
-        onReset={() => dispatch({ type: "RESET_RESULT" })}
+        onDownloadAll={handleDownloadAll}
+        onReset={() => dispatch({ type: "RESET_ALL" })}
         locale={locale}
       />
     </div>
