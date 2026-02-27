@@ -170,9 +170,9 @@ export function getCodecById(
 export function getDefaultVideoSettings(): VideoAdvancedSettings {
   return {
     rateControl: "crf",
-    crf: 23,
-    videoBitrate: "2M",
-    audioBitrate: "128k",
+    crf: 28,
+    videoBitrate: "1M",
+    audioBitrate: "96k",
     scale: "1",
     frameRate: "original",
     audioCodec: "aac",
@@ -181,7 +181,7 @@ export function getDefaultVideoSettings(): VideoAdvancedSettings {
 
 export function getDefaultAudioSettings(): AudioAdvancedSettings {
   return {
-    audioBitrate: "192k",
+    audioBitrate: "128k",
     sampleRate: "original",
     channels: "original",
   };

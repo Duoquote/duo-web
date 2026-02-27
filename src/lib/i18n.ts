@@ -42,7 +42,7 @@ const translations = {
     "tools.h3.description": "Visualize H3 hex cells on an interactive map.",
 
     // Converter tool listing
-    "tools.converter.name": "File Converter",
+    "tools.converter.name": "Video Converter",
     "tools.converter.description":
       "Convert video and audio files in your browser.",
 
@@ -57,7 +57,7 @@ const translations = {
 
     // Converter
     "converter.backToTools": "← Back to tools",
-    "converter.heading": "File Converter",
+    "converter.heading": "Video Converter",
     "converter.description":
       "Convert video and audio files entirely in your browser. No upload, no server.",
     "converter.dropzone": "Drop a file here or click to browse",
@@ -101,9 +101,9 @@ const translations = {
 
     // SEO — Converter
     "seo.converter.title":
-      "File Converter — Convert Video & Audio in Your Browser",
+      "Video Converter — Convert Video & Audio in Your Browser",
     "seo.converter.description":
-      "Free online file converter. Convert MP4, WebM, MKV, MP3, AAC, GIF and more entirely in your browser with ffmpeg.wasm. No upload required.",
+      "Free online video converter. Convert MP4, WebM, MKV, MP3, AAC, GIF and more entirely in your browser with ffmpeg.wasm. No upload required.",
 
     // 404
     "404.title": "404 — Page Not Found",
@@ -171,7 +171,7 @@ const translations = {
       "H3 altıgen hücrelerini interaktif haritada görselleştirin.",
 
     // Converter tool listing
-    "tools.converter.name": "Dosya Dönüştürücü",
+    "tools.converter.name": "Video Dönüştürücü",
     "tools.converter.description":
       "Video ve ses dosyalarını tarayıcınızda dönüştürün.",
 
@@ -187,7 +187,7 @@ const translations = {
 
     // Converter
     "converter.backToTools": "← Araçlara dön",
-    "converter.heading": "Dosya Dönüştürücü",
+    "converter.heading": "Video Dönüştürücü",
     "converter.description":
       "Video ve ses dosyalarını tamamen tarayıcınızda dönüştürün. Yükleme yok, sunucu yok.",
     "converter.dropzone": "Bir dosya sürükleyin veya tıklayıp seçin",
@@ -231,9 +231,9 @@ const translations = {
 
     // SEO — Converter
     "seo.converter.title":
-      "Dosya Dönüştürücü — Tarayıcınızda Video ve Ses Dönüştürün",
+      "Video Dönüştürücü — Tarayıcınızda Video ve Ses Dönüştürün",
     "seo.converter.description":
-      "Ücretsiz çevrimiçi dosya dönüştürücü. MP4, WebM, MKV, MP3, AAC, GIF ve daha fazlasını ffmpeg.wasm ile tamamen tarayıcınızda dönüştürün. Yükleme gerekmez.",
+      "Ücretsiz çevrimiçi video dönüştürücü. MP4, WebM, MKV, MP3, AAC, GIF ve daha fazlasını ffmpeg.wasm ile tamamen tarayıcınızda dönüştürün. Yükleme gerekmez.",
 
     // 404
     "404.title": "404 — Sayfa Bulunamadı",

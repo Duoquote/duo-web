@@ -29,5 +29,8 @@ const locale = "en" as const;
       {t(locale, "converter.description")}
     </p>
     <Converter client:only="react" locale={locale} />
+    <p class="mt-6 text-xs text-muted-foreground/50">
+      Powered by <a href="https://github.com/ffmpegwasm/ffmpeg.wasm" class="underline hover:text-muted-foreground" target="_blank" rel="noopener noreferrer">ffmpeg.wasm</a>
+    </p>
   </main>
 </Layout>

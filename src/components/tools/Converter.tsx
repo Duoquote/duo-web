@@ -118,7 +118,7 @@ function getInitialState(): ConverterState {
     inputFormat: "x",
     outputFormatId: "mp4",
     codecId: "h264",
-    preset: "balanced",
+    preset: "small",
     videoSettings: getDefaultVideoSettings(),
     audioSettings: getDefaultAudioSettings(),
     advancedOpen: false,

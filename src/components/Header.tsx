@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Sun, Moon } from "lucide-react";
+import { FaGithub } from "react-icons/fa";
 import { t, getLocalizedPath, type Locale } from "../lib/i18n";
 
 function getIsDark() {
@@ -60,6 +61,15 @@ export default function Header({ locale = "en" }: { locale?: Locale }) {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
+          <a
+            href="https://github.com/Duoquote/duo-web"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-1.5 text-muted-foreground border border-border transition-colors hover:text-foreground hover:border-primary/30"
+            aria-label="GitHub"
+          >
+            <FaGithub size={14} />
+          </a>
           <button
             onClick={toggleTheme}
             className="p-1.5 text-muted-foreground border border-border transition-colors hover:text-foreground hover:border-primary/30 cursor-pointer"
