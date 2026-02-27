@@ -38,6 +38,10 @@
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
+  --grid-line: oklch(0 0 0 / 5%);
+  --grid-dot: oklch(0 0 0 / 6%);
+  --glow-warm: oklch(0.586 0.253 17.585 / 8%);
+  --glow-accent: oklch(0.586 0.253 17.585 / 6%);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -68,6 +72,10 @@
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
+  --grid-line: oklch(1 0 0 / 3%);
+  --grid-dot: oklch(1 0 0 / 4%);
+  --glow-warm: oklch(0.645 0.246 16.439 / 6%);
+  --glow-accent: oklch(0.586 0.253 17.585 / 4%);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
@@ -104,6 +112,7 @@
   *::after {
     border-color: var(--border);
     text-decoration: none;
+    outline: none !important;
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
@@ -129,4 +138,55 @@
   50% {
     transform: scale(1.1);
   }
+}
+
+/* Dark-themed Leaflet tiles */
+.dark .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(1.15) contrast(0.9) saturate(0.2);
+}
+
+.dark .leaflet-control-attribution {
+  background: oklch(0.145 0 0 / 80%) !important;
+  color: oklch(0.708 0 0) !important;
+}
+
+.dark .leaflet-control-attribution a {
+  color: oklch(0.645 0.246 16.439) !important;
+}
+
+.dark .leaflet-control-zoom a {
+  background: oklch(0.205 0 0) !important;
+  color: oklch(0.985 0 0) !important;
+  border-color: oklch(1 0 0 / 10%) !important;
+}
+
+.dark .leaflet-control-zoom a:hover {
+  background: oklch(0.269 0 0) !important;
+}
+
+.h3-tooltip {
+  backdrop-filter: blur(8px);
+  font-family: "Google Sans", ui-monospace, monospace !important;
+  font-size: 11px !important;
+  padding: 4px 8px !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  white-space: nowrap;
+  background: oklch(1 0 0 / 90%) !important;
+  border: 1px solid oklch(0 0 0 / 10%) !important;
+  color: oklch(0.145 0 0) !important;
+}
+
+.h3-tooltip::before {
+  border-top-color: oklch(0 0 0 / 10%) !important;
+}
+
+.dark .h3-tooltip {
+  background: oklch(0.145 0 0 / 85%) !important;
+  border: 1px solid oklch(1 0 0 / 10%) !important;
+  color: oklch(0.985 0 0) !important;
+}
+
+.dark .h3-tooltip::before {
+  border-top-color: oklch(1 0 0 / 10%) !important;
 }

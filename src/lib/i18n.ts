@@ -46,6 +46,7 @@ const translations = {
     "h3.heading": "H3 Explorer",
     "h3.description": "Enter an H3 hex index to visualize the cell on the map.",
     "h3.placeholder": "e.g. 8928308280fffff",
+    "h3.placeholderDecimal": "e.g. 622236750694711295",
     "h3.errorEmpty": "Enter an H3 index",
     "h3.errorInvalid": "Invalid H3 index",
 
@@ -120,6 +121,7 @@ const translations = {
     "h3.description":
       "Haritada görselleştirmek için bir H3 altıgen indeksi girin.",
     "h3.placeholder": "örn. 8928308280fffff",
+    "h3.placeholderDecimal": "örn. 622236750694711295",
     "h3.errorEmpty": "Bir H3 indeksi girin",
     "h3.errorInvalid": "Geçersiz H3 indeksi",
 

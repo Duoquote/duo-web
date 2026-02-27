@@ -1,6 +1,27 @@
+import { useState, useEffect } from "react";
+import { Sun, Moon } from "lucide-react";
 import { t, getLocalizedPath, type Locale } from "../lib/i18n";
 
+function getIsDark() {
+  if (typeof document === "undefined") return true;
+  return document.documentElement.classList.contains("dark");
+}
+
 export default function Header({ locale = "en" }: { locale?: Locale }) {
+  const [dark, setDark] = useState(getIsDark);
+
+  useEffect(() => {
+    // Sync state if the inline script already set the class
+    setDark(getIsDark());
+  }, []);
+
+  function toggleTheme() {
+    const next = !dark;
+    setDark(next);
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("theme", next ? "dark" : "light");
+  }
+
   const navItems = [
     { label: t(locale, "nav.home"), href: getLocalizedPath(locale, "/") },
     { label: t(locale, "nav.tools"), href: getLocalizedPath(locale, "/tools") },
@@ -38,7 +59,14 @@ export default function Header({ locale = "en" }: { locale?: Locale }) {
           ))}
         </div>
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={toggleTheme}
+            className="p-1.5 text-muted-foreground border border-border transition-colors hover:text-foreground hover:border-primary/30 cursor-pointer"
+            aria-label="Toggle theme"
+          >
+            {dark ? <Sun size={14} /> : <Moon size={14} />}
+          </button>
           <a
             href={switchPath}
             className="px-2.5 py-1 text-xs font-semibold tracking-wide text-muted-foreground border border-border transition-colors hover:text-foreground hover:border-primary/30"

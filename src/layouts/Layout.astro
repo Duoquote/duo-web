@@ -56,10 +56,22 @@ const jsonLd = {
 ---
 
 <!doctype html>
-<html lang={locale} class="dark">
+<html lang={locale}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Theme init (runs before paint to prevent flash) -->
+    <script is:inline>
+      function applyTheme() {
+        var stored = localStorage.getItem('theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var isDark = stored === 'dark' || (!stored && prefersDark);
+        document.documentElement.classList.toggle('dark', isDark);
+      }
+      applyTheme();
+      document.addEventListener('astro:after-swap', applyTheme);
+    </script>
 
     <!-- SEO -->
     <title>{title}</title>
@@ -80,8 +92,8 @@ const jsonLd = {
     <link rel="apple-touch-icon" href="/favicon.png" />
 
     <!-- Theme -->
-    <meta name="theme-color" content="#1a1a1a" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="color-scheme" content="light dark" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
