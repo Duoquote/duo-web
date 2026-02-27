@@ -26,6 +26,7 @@ export default function Header({ locale = "en" }: { locale?: Locale }) {
   const navItems = [
     { label: t(locale, "nav.home"), href: getLocalizedPath(locale, "/") },
     { label: t(locale, "nav.tools"), href: getLocalizedPath(locale, "/tools") },
+    { label: t(locale, "nav.links"), href: getLocalizedPath(locale, "/links") },
   ];
 
   const currentPath =

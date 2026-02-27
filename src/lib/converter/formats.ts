@@ -24,8 +24,12 @@ export interface VideoAdvancedSettings {
   videoBitrate: string;
   audioBitrate: string;
   scale: string;
+  targetWidth: string;
+  targetHeight: string;
   frameRate: string;
   audioCodec: string;
+  audioSampleRate: string;
+  audioChannels: string;
 }
 
 export interface AudioAdvancedSettings {
@@ -174,8 +178,12 @@ export function getDefaultVideoSettings(): VideoAdvancedSettings {
     videoBitrate: "1M",
     audioBitrate: "96k",
     scale: "1",
+    targetWidth: "",
+    targetHeight: "",
     frameRate: "original",
     audioCodec: "aac",
+    audioSampleRate: "original",
+    audioChannels: "original",
   };
 }
 

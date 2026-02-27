@@ -13,6 +13,8 @@ import {
   Loader2,
   AlertTriangle,
   RotateCcw,
+  Link,
+  Unlink,
 } from "lucide-react";
 import type { Locale } from "../../lib/i18n";
 import { t } from "../../lib/i18n";
@@ -53,6 +55,45 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
 }
 
+function getVideoDimensions(
+  file: File,
+): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    const url = URL.createObjectURL(file);
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(url);
+      resolve({ width: video.videoWidth, height: video.videoHeight });
+    };
+    video.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Could not read video dimensions"));
+    };
+    video.src = url;
+  });
+}
+
+function computeTargetDims(
+  sourceWidth: number | null,
+  sourceHeight: number | null,
+  scale: string,
+): { targetWidth: string; targetHeight: string } {
+  if (
+    !sourceWidth ||
+    !sourceHeight ||
+    scale === "pixel" ||
+    scale === "custom"
+  ) {
+    return { targetWidth: "", targetHeight: "" };
+  }
+  const factor = parseFloat(scale);
+  if (isNaN(factor)) return { targetWidth: "", targetHeight: "" };
+  const w = Math.round((sourceWidth * factor) / 2) * 2;
+  const h = Math.round((sourceHeight * factor) / 2) * 2;
+  return { targetWidth: String(w), targetHeight: String(h) };
+}
+
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
@@ -60,6 +101,9 @@ function formatFileSize(bytes: number): string {
 interface ConverterState {
   file: File | null;
   fileSizeWarning: boolean;
+  sourceWidth: number | null;
+  sourceHeight: number | null;
+  lockAspectRatio: boolean;
   inputFormat: string;
   outputFormatId: string;
   codecId: string;
@@ -104,6 +148,13 @@ type ConverterAction =
     }
   | { type: "CONVERT_ERROR"; error: string }
   | { type: "CONVERT_CANCEL" }
+  | { type: "SET_SOURCE_DIMENSIONS"; width: number; height: number }
+  | { type: "TOGGLE_ASPECT_LOCK" }
+  | {
+      type: "SET_TARGET_DIMENSION";
+      key: "targetWidth" | "targetHeight";
+      value: string;
+    }
   | { type: "RESET_RESULT" }
   | {
       type: "SYNC_HASH";
@@ -115,6 +166,9 @@ function getInitialState(): ConverterState {
   return {
     file: null,
     fileSizeWarning: false,
+    sourceWidth: null,
+    sourceHeight: null,
+    lockAspectRatio: true,
     inputFormat: "x",
     outputFormatId: "mp4",
     codecId: "h264",
@@ -143,10 +197,17 @@ function converterReducer(
         ...state,
         file: action.file,
         fileSizeWarning: sizeWarning,
+        sourceWidth: null,
+        sourceHeight: null,
         outputData: null,
         outputSize: 0,
         outputFileName: "",
         error: null,
+        videoSettings: {
+          ...state.videoSettings,
+          targetWidth: "",
+          targetHeight: "",
+        },
       };
     }
 
@@ -155,10 +216,17 @@ function converterReducer(
         ...state,
         file: null,
         fileSizeWarning: false,
+        sourceWidth: null,
+        sourceHeight: null,
         outputData: null,
         outputSize: 0,
         outputFileName: "",
         error: null,
+        videoSettings: {
+          ...state.videoSettings,
+          targetWidth: "",
+          targetHeight: "",
+        },
       };
 
     case "SET_OUTPUT_FORMAT": {
@@ -174,18 +242,28 @@ function converterReducer(
           ? getPresetValues(defaultCodec.ffmpegCodec, state.preset)
           : null;
 
+      const newVideoSettings = presetValues
+        ? {
+            ...getDefaultVideoSettings(),
+            crf: presetValues.crf,
+            videoBitrate: presetValues.videoBitrate,
+            audioBitrate: presetValues.audioBitrate,
+          }
+        : getDefaultVideoSettings();
+
+      const dims = computeTargetDims(
+        state.sourceWidth,
+        state.sourceHeight,
+        newVideoSettings.scale,
+      );
+      newVideoSettings.targetWidth = dims.targetWidth;
+      newVideoSettings.targetHeight = dims.targetHeight;
+
       return {
         ...state,
         outputFormatId: format.id,
         codecId: format.defaultCodecId,
-        videoSettings: presetValues
-          ? {
-              ...getDefaultVideoSettings(),
-              crf: presetValues.crf,
-              videoBitrate: presetValues.videoBitrate,
-              audioBitrate: presetValues.audioBitrate,
-            }
-          : getDefaultVideoSettings(),
+        videoSettings: newVideoSettings,
         audioSettings: presetValues
           ? {
               ...getDefaultAudioSettings(),
@@ -230,16 +308,26 @@ function converterReducer(
       const pv = getPresetValues(codec.ffmpegCodec, action.preset);
 
       if (format.type === "audio") {
+        const isPixelAudio = action.preset === "pixel";
         return {
           ...state,
           preset: action.preset,
           audioSettings: {
             ...state.audioSettings,
             audioBitrate: pv.audioBitrate,
+            sampleRate: isPixelAudio ? "8000" : "original",
+            channels: isPixelAudio ? "1" : "original",
           },
         };
       }
 
+      const isPixel = action.preset === "pixel";
+      const newScale = isPixel ? "pixel" : "1";
+      const presetDims = computeTargetDims(
+        state.sourceWidth,
+        state.sourceHeight,
+        newScale,
+      );
       return {
         ...state,
         preset: action.preset,
@@ -248,20 +336,35 @@ function converterReducer(
           crf: pv.crf,
           videoBitrate: pv.videoBitrate,
           audioBitrate: pv.audioBitrate,
-          scale: action.preset === "pixel" ? "pixel" : "1",
+          scale: newScale,
+          targetWidth: presetDims.targetWidth,
+          targetHeight: presetDims.targetHeight,
+          audioSampleRate: isPixel ? "8000" : "original",
+          audioChannels: isPixel ? "1" : "original",
         },
       };
     }
 
-    case "SET_VIDEO_SETTING":
+    case "SET_VIDEO_SETTING": {
+      const updatedVideoSettings = {
+        ...state.videoSettings,
+        [action.key]: action.value,
+      };
+      if (action.key === "scale") {
+        const scaleDims = computeTargetDims(
+          state.sourceWidth,
+          state.sourceHeight,
+          String(action.value),
+        );
+        updatedVideoSettings.targetWidth = scaleDims.targetWidth;
+        updatedVideoSettings.targetHeight = scaleDims.targetHeight;
+      }
       return {
         ...state,
         preset: "custom",
-        videoSettings: {
-          ...state.videoSettings,
-          [action.key]: action.value,
-        },
+        videoSettings: updatedVideoSettings,
       };
+    }
 
     case "SET_AUDIO_SETTING":
       return {
@@ -322,12 +425,76 @@ function converterReducer(
         ...state,
         file: null,
         fileSizeWarning: false,
+        sourceWidth: null,
+        sourceHeight: null,
         outputData: null,
         outputSize: 0,
         outputFileName: "",
         error: null,
         progress: 0,
+        videoSettings: {
+          ...state.videoSettings,
+          targetWidth: "",
+          targetHeight: "",
+        },
       };
+
+    case "SET_SOURCE_DIMENSIONS": {
+      const srcDims = computeTargetDims(
+        action.width,
+        action.height,
+        state.videoSettings.scale,
+      );
+      return {
+        ...state,
+        sourceWidth: action.width,
+        sourceHeight: action.height,
+        videoSettings: {
+          ...state.videoSettings,
+          targetWidth: srcDims.targetWidth,
+          targetHeight: srcDims.targetHeight,
+        },
+      };
+    }
+
+    case "TOGGLE_ASPECT_LOCK":
+      return { ...state, lockAspectRatio: !state.lockAspectRatio };
+
+    case "SET_TARGET_DIMENSION": {
+      const dimUpdate: Partial<VideoAdvancedSettings> = {
+        [action.key]: action.value,
+        scale: "custom",
+      };
+
+      if (
+        state.lockAspectRatio &&
+        state.sourceWidth &&
+        state.sourceHeight &&
+        action.value !== ""
+      ) {
+        const v = parseInt(action.value);
+        if (!isNaN(v) && v > 0) {
+          const ratio = state.sourceWidth / state.sourceHeight;
+          if (action.key === "targetWidth") {
+            dimUpdate.targetHeight = String(
+              Math.round(v / ratio / 2) * 2,
+            );
+          } else {
+            dimUpdate.targetWidth = String(
+              Math.round(v * ratio / 2) * 2,
+            );
+          }
+        }
+      }
+
+      return {
+        ...state,
+        videoSettings: {
+          ...state.videoSettings,
+          ...dimUpdate,
+        },
+      };
+    }
 
     case "SYNC_HASH": {
       const format = getFormatById(action.outputFormatId);
@@ -442,11 +609,15 @@ function DropZone({
 function FileInfo({
   file,
   sizeWarning,
+  sourceWidth,
+  sourceHeight,
   onRemove,
   locale,
 }: {
   file: File;
   sizeWarning: boolean;
+  sourceWidth: number | null;
+  sourceHeight: number | null;
   onRemove: () => void;
   locale: Locale;
 }) {
@@ -466,6 +637,12 @@ function FileInfo({
             {formatFileSize(file.size)}
             <span className="mx-1.5 text-border">·</span>
             {file.type || "unknown"}
+            {sourceWidth !== null && sourceHeight !== null && (
+              <>
+                <span className="mx-1.5 text-border">·</span>
+                {sourceWidth}×{sourceHeight}
+              </>
+            )}
           </p>
         </div>
         <button
@@ -580,6 +757,9 @@ function FormatSelector({
             <option value="0.75">0.75x</option>
             <option value="0.5">0.5x</option>
             <option value="0.33">0.33x</option>
+            {scale === "custom" && (
+              <option value="custom">Custom</option>
+            )}
           </select>
         </div>
       )}
@@ -1191,13 +1371,26 @@ export default function Converter({
       {/* File input */}
       {!state.file ? (
         <DropZone
-          onFile={(f) => dispatch({ type: "SET_FILE", file: f })}
+          onFile={(f) => {
+            dispatch({ type: "SET_FILE", file: f });
+            getVideoDimensions(f)
+              .then((dims) =>
+                dispatch({
+                  type: "SET_SOURCE_DIMENSIONS",
+                  width: dims.width,
+                  height: dims.height,
+                }),
+              )
+              .catch(() => {});
+          }}
           locale={locale}
         />
       ) : (
         <FileInfo
           file={state.file}
           sizeWarning={state.fileSizeWarning}
+          sourceWidth={state.sourceWidth}
+          sourceHeight={state.sourceHeight}
           onRemove={() => dispatch({ type: "CLEAR_FILE" })}
           locale={locale}
         />
@@ -1224,6 +1417,74 @@ export default function Converter({
             }
             locale={locale}
           />
+
+          {format &&
+            (format.type === "video" || format.type === "image") &&
+            state.sourceWidth !== null && (
+              <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                    Width
+                  </label>
+                  <input
+                    type="number"
+                    value={state.videoSettings.targetWidth}
+                    onChange={(e) =>
+                      dispatch({
+                        type: "SET_TARGET_DIMENSION",
+                        key: "targetWidth",
+                        value: e.target.value,
+                      })
+                    }
+                    placeholder="W"
+                    min={1}
+                    className={selectClass}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    dispatch({ type: "TOGGLE_ASPECT_LOCK" })
+                  }
+                  className={cn(
+                    "mb-0.5 p-1.5 transition-colors",
+                    state.lockAspectRatio
+                      ? "text-primary"
+                      : "text-muted-foreground/40 hover:text-muted-foreground",
+                  )}
+                  title={
+                    state.lockAspectRatio
+                      ? "Aspect ratio locked"
+                      : "Aspect ratio unlocked"
+                  }
+                >
+                  {state.lockAspectRatio ? (
+                    <Link className="h-4 w-4" />
+                  ) : (
+                    <Unlink className="h-4 w-4" />
+                  )}
+                </button>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                    Height
+                  </label>
+                  <input
+                    type="number"
+                    value={state.videoSettings.targetHeight}
+                    onChange={(e) =>
+                      dispatch({
+                        type: "SET_TARGET_DIMENSION",
+                        key: "targetHeight",
+                        value: e.target.value,
+                      })
+                    }
+                    placeholder="H"
+                    min={1}
+                    className={selectClass}
+                  />
+                </div>
+              </div>
+            )}
 
           {showPresets && (
             <QualityPresets

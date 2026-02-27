@@ -5,6 +5,7 @@ const translations = {
     // Nav
     "nav.home": "Home",
     "nav.tools": "Tools",
+    "nav.links": "Links",
 
     // Hero
     "hero.badge": "Managing Partner @ Next Geo",
@@ -105,6 +106,19 @@ const translations = {
     "seo.converter.description":
       "Free online video converter. Convert MP4, WebM, MKV, MP3, AAC, GIF and more entirely in your browser with ffmpeg.wasm. No upload required.",
 
+    // Links page
+    "links.label": "Links",
+    "links.heading": "Curated links.",
+    "links.description":
+      "Useful tools and resources I've bookmarked over the years.",
+    "links.category.gis": "GIS & Mapping",
+    "links.category.design": "Design & Productivity",
+
+    // SEO — Links
+    "seo.links.title": "Links — Güven Değirmenci",
+    "seo.links.description":
+      "Curated collection of developer bookmarks for GIS, mapping, design and productivity tools.",
+
     // 404
     "404.title": "404 — Page Not Found",
     "404.heading": "Page not found",
@@ -132,6 +146,7 @@ const translations = {
     // Nav
     "nav.home": "Ana Sayfa",
     "nav.tools": "Araçlar",
+    "nav.links": "Bağlantılar",
 
     // Hero
     "hero.badge": "Yönetici Ortak @ Next Geo",
@@ -234,6 +249,19 @@ const translations = {
       "Video Dönüştürücü — Tarayıcınızda Video ve Ses Dönüştürün",
     "seo.converter.description":
       "Ücretsiz çevrimiçi video dönüştürücü. MP4, WebM, MKV, MP3, AAC, GIF ve daha fazlasını ffmpeg.wasm ile tamamen tarayıcınızda dönüştürün. Yükleme gerekmez.",
+
+    // Links page
+    "links.label": "Bağlantılar",
+    "links.heading": "Seçilmiş bağlantılar.",
+    "links.description":
+      "Yıllar içinde kaydettiğim faydalı araç ve kaynaklar.",
+    "links.category.gis": "CBS & Haritalama",
+    "links.category.design": "Tasarım & Verimlilik",
+
+    // SEO — Links
+    "seo.links.title": "Bağlantılar — Güven Değirmenci",
+    "seo.links.description":
+      "CBS, haritalama, tasarım ve verimlilik araçları için geliştiricilere özel bağlantı koleksiyonu.",
 
     // 404
     "404.title": "404 — Sayfa Bulunamadı",

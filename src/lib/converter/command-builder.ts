@@ -60,6 +60,12 @@ function buildVideoArgs(
 
   if (s.scale === "pixel") {
     args.push("-vf", "scale=80:80:force_original_aspect_ratio=decrease,scale=1280:720:force_original_aspect_ratio=increase:flags=neighbor");
+  } else if (s.scale === "custom" && s.targetWidth && s.targetHeight) {
+    const w = Math.round(parseInt(s.targetWidth) / 2) * 2;
+    const h = Math.round(parseInt(s.targetHeight) / 2) * 2;
+    if (w > 0 && h > 0) {
+      args.push("-vf", `scale=${w}:${h}`);
+    }
   } else if (s.scale !== "1") {
     args.push("-vf", `scale=trunc(iw*${s.scale}/2)*2:trunc(ih*${s.scale}/2)*2`);
   }
@@ -75,6 +81,18 @@ function buildVideoArgs(
   } else {
     args.push("-c:a", s.audioCodec);
     args.push("-b:a", s.audioBitrate);
+
+    if (s.audioSampleRate !== "original") {
+      args.push("-ar", s.audioSampleRate);
+    }
+    if (s.audioChannels !== "original") {
+      args.push("-ac", s.audioChannels);
+    }
+
+    // Telephone-style bandpass filter for pixel/funny mode (8kHz sample rate)
+    if (s.audioSampleRate === "8000") {
+      args.push("-af", "highpass=f=300,lowpass=f=3400");
+    }
   }
 
   if (format.id === "mp4" || format.id === "mov") {
@@ -112,6 +130,11 @@ function buildAudioArgs(
     args.push("-ac", s.channels);
   }
 
+  // Telephone-style bandpass filter for pixel/funny mode (8kHz sample rate)
+  if (s.sampleRate === "8000") {
+    args.push("-af", "highpass=f=300,lowpass=f=3400");
+  }
+
   return args;
 }
 
@@ -121,6 +144,12 @@ function buildGifArgs(s: VideoAdvancedSettings): string[] {
 
   if (s.scale === "pixel") {
     filterParts.push("scale=80:80:force_original_aspect_ratio=decrease,scale=1280:720:force_original_aspect_ratio=increase:flags=neighbor");
+  } else if (s.scale === "custom" && s.targetWidth && s.targetHeight) {
+    const w = Math.round(parseInt(s.targetWidth) / 2) * 2;
+    const h = Math.round(parseInt(s.targetHeight) / 2) * 2;
+    if (w > 0 && h > 0) {
+      filterParts.push(`scale=${w}:${h}:flags=lanczos`);
+    }
   } else if (s.scale !== "1") {
     filterParts.push(`scale=trunc(iw*${s.scale}/2)*2:trunc(ih*${s.scale}/2)*2:flags=lanczos`);
   }
