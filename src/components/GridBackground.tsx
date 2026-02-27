@@ -6,7 +6,7 @@ export default function GridBackground() {
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: "url(/background.jpg)" }}
       >
-        <div className="absolute inset-0 bg-background/85" />
+        <div className="absolute inset-0 bg-background/70" />
       </div>
 
       {/* Grid lines */}

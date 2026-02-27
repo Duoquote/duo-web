@@ -21,7 +21,7 @@ export default function AboutSection({ locale = "en" }: { locale?: Locale }) {
     <section className="relative z-10 border-t border-border/50 py-20 md:py-28">
       <div className="mx-auto grid max-w-5xl gap-10 px-4 md:grid-cols-[280px_1fr] md:gap-16 md:px-6">
         {/* Left — Photo + stats */}
-        <div>
+        <div className="flex flex-col items-center md:items-start">
           <div className="relative aspect-square w-44 overflow-hidden md:w-full">
             <img
               src="/pp.jpg"
@@ -31,7 +31,7 @@ export default function AboutSection({ locale = "en" }: { locale?: Locale }) {
             <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
           </div>
 
-          <div className="mt-6 flex flex-col gap-3">
+          <div className="mt-6 flex w-full flex-col gap-3">
             {stats.map((s) => (
               <div key={s.label} className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">{s.label}</span>
@@ -42,7 +42,7 @@ export default function AboutSection({ locale = "en" }: { locale?: Locale }) {
         </div>
 
         {/* Right — Bio */}
-        <div>
+        <div className="text-center md:text-left">
           <span className="mb-3 block text-xs font-semibold tracking-[0.1em] text-primary uppercase">
             {t(locale, "about.label")}
           </span>
@@ -50,24 +50,24 @@ export default function AboutSection({ locale = "en" }: { locale?: Locale }) {
             {t(locale, "about.heading")}
           </h2>
 
-          <p className="mb-4 text-base leading-relaxed text-muted-foreground">
+          <p className="mb-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
             {t(locale, "about.bio1")}
           </p>
-          <p className="mb-8 text-base leading-relaxed text-muted-foreground">
+          <p className="mb-8 text-sm leading-relaxed text-muted-foreground sm:text-base">
             {t(locale, "about.bio2", { years })}
           </p>
 
           {/* Tech groups */}
-          <span className="mb-4 block text-xs font-medium tracking-[0.1em] text-muted-foreground uppercase">
+          <span className="mb-4 block text-xs font-medium tracking-[0.1em] text-muted-foreground uppercase text-left">
             {t(locale, "about.techHeading")}
           </span>
           <div className="space-y-3">
             {techGroups.map((group) => (
-              <div key={group.label} className="flex items-baseline gap-3">
-                <span className="shrink-0 text-xs font-medium text-primary/70 w-16">
+              <div key={group.label} className="flex flex-col items-center gap-1.5 sm:flex-row sm:items-baseline sm:gap-3">
+                <span className="shrink-0 text-xs font-medium text-primary/70 sm:w-16">
                   {group.label}
                 </span>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap justify-center gap-1.5 sm:justify-start">
                   {group.items.map((tech) => (
                     <span
                       key={tech}

@@ -26,7 +26,7 @@ export default function SocialsSection({ locale = "en" }: { locale?: Locale }) {
     <footer className="relative z-10 border-t border-border/50 py-16 md:py-24">
       <div className="mx-auto max-w-5xl px-4 md:px-6">
         {/* Terminal card */}
-        <div className="mx-auto max-w-xl border border-border bg-card">
+        <div className="mx-auto max-w-xl border border-border bg-card overflow-hidden">
           {/* Title bar */}
           <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
             <div className="h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
@@ -38,7 +38,7 @@ export default function SocialsSection({ locale = "en" }: { locale?: Locale }) {
           </div>
 
           {/* Terminal body */}
-          <div className="p-5 font-mono text-sm leading-relaxed space-y-4">
+          <div className="p-4 sm:p-5 font-mono text-xs sm:text-sm leading-relaxed space-y-4">
             {commands.map((cmd, i) => (
               <div key={i}>
                 <div className="text-muted-foreground">{cmd.prompt}</div>
