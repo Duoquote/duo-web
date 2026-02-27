@@ -1,4 +1,4 @@
-import { FaGithub, FaLinkedinIn } from "react-icons/fa";
+import { Github, Linkedin } from "lucide-react";
 import { getYearsOfExperience } from "../lib/years";
 import { t, type Locale } from "../lib/i18n";
 
@@ -36,7 +36,7 @@ export default function Hero({ locale = "en" }: { locale?: Locale }) {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 bg-[#24292e] px-6 py-2.5 text-sm font-semibold text-white no-underline transition-colors hover:bg-[#2f363d]"
           >
-            <FaGithub className="h-4 w-4" />
+            <Github className="h-4 w-4" />
             GitHub
           </a>
           <a
@@ -45,7 +45,7 @@ export default function Hero({ locale = "en" }: { locale?: Locale }) {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 bg-[#0a66c2] px-6 py-2.5 text-sm font-semibold text-white no-underline transition-colors hover:bg-[#004182]"
           >
-            <FaLinkedinIn className="h-4 w-4" />
+            <Linkedin className="h-4 w-4" />
             LinkedIn
           </a>
         </div>

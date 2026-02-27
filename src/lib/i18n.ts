@@ -102,6 +102,11 @@ const translations = {
     "converter.downloadAll": "Download All",
     "converter.completed": "completed",
     "converter.failed": "failed",
+    "converter.wasmPromptTitle": "FFmpeg needs to be downloaded",
+    "converter.wasmPromptDesc":
+      "This will download the FFmpeg WebAssembly binary (~32 MB) from a CDN. It will be cached by your browser for future use.",
+    "converter.wasmAccept": "Continue",
+    "converter.wasmDontShowAgain": "Don't show this again",
     "converter.slowNotice":
       "Conversion runs entirely in your browser via WebAssembly — this is slower than native and may take a while for large files. This is normal.",
 
@@ -251,6 +256,11 @@ const translations = {
     "converter.downloadAll": "Tümünü İndir",
     "converter.completed": "tamamlandı",
     "converter.failed": "başarısız",
+    "converter.wasmPromptTitle": "FFmpeg indirilmesi gerekiyor",
+    "converter.wasmPromptDesc":
+      "Bu işlem CDN üzerinden FFmpeg WebAssembly dosyasını (~32 MB) indirecektir. Tarayıcınız tarafından önbelleğe alınacaktır.",
+    "converter.wasmAccept": "Devam Et",
+    "converter.wasmDontShowAgain": "Bir daha gösterme",
     "converter.slowNotice":
       "Dönüştürme tamamen tarayıcınızda WebAssembly ile çalışır — bu, yerel işlemden daha yavaştır ve büyük dosyalarda zaman alabilir. Bu normaldir.",
 

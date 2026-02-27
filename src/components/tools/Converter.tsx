@@ -40,8 +40,13 @@ import {
 } from "../../lib/converter/command-builder";
 import {
   getFFmpeg,
-  convert,
-  cancel,
+  isLoaded,
+  isPromptDismissed,
+  setPromptDismissed,
+  createWorker,
+  releaseWorker,
+  convertWithWorker,
+  cancelAll,
   terminate,
 } from "../../lib/converter/ffmpeg";
 
@@ -156,7 +161,6 @@ interface ConverterState {
   advancedOpen: boolean;
   ffmpegLoading: boolean;
   converting: boolean;
-  currentFileIndex: number;
   error: string | null;
 }
 
@@ -185,6 +189,7 @@ type ConverterAction =
     }
   | { type: "TOGGLE_ADVANCED" }
   | { type: "FFMPEG_LOADING" }
+  | { type: "CONVERT_START" }
   | { type: "CONVERT_FILE_START"; index: number }
   | { type: "CONVERT_FILE_PROGRESS"; index: number; progress: number }
   | {
@@ -223,7 +228,6 @@ function getInitialState(): ConverterState {
     advancedOpen: false,
     ffmpegLoading: false,
     converting: false,
-    currentFileIndex: 0,
     error: null,
   };
 }
@@ -444,12 +448,13 @@ function converterReducer(
     case "FFMPEG_LOADING":
       return { ...state, ffmpegLoading: true, error: null };
 
+    case "CONVERT_START":
+      return { ...state, ffmpegLoading: false, converting: true };
+
     case "CONVERT_FILE_START":
       return {
         ...state,
-        ffmpegLoading: false,
         converting: true,
-        currentFileIndex: action.index,
         files: updateFileAt(state.files, action.index, {
           status: "converting",
           progress: 0,
@@ -513,7 +518,6 @@ function converterReducer(
         error: null,
         converting: false,
         ffmpegLoading: false,
-        currentFileIndex: 0,
         videoSettings: {
           ...state.videoSettings,
           targetWidth: "",
@@ -1288,6 +1292,62 @@ function AdvancedSettings({
 }
 
 // ---------------------------------------------------------------------------
+// WasmPrompt
+// ---------------------------------------------------------------------------
+
+function WasmDialog({
+  onClose,
+  locale,
+}: {
+  onClose: () => void;
+  locale: Locale;
+}) {
+  const [dontShow, setDontShow] = useState(false);
+
+  const handleOk = () => {
+    if (dontShow) setPromptDismissed(true);
+    onClose();
+    // Start downloading FFmpeg in the background
+    getFFmpeg().catch(() => {});
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-sm space-y-4 border border-border bg-card p-5 shadow-lg">
+        <div className="flex items-start gap-3">
+          <Download className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium text-foreground">
+              {t(locale, "converter.wasmPromptTitle")}
+            </p>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {t(locale, "converter.wasmPromptDesc")}
+            </p>
+          </div>
+        </div>
+        <label className="flex cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            checked={dontShow}
+            onChange={(e) => setDontShow(e.target.checked)}
+            className="accent-primary"
+          />
+          <span className="text-xs text-muted-foreground">
+            {t(locale, "converter.wasmDontShowAgain")}
+          </span>
+        </label>
+        <button
+          onClick={handleOk}
+          className="w-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          {t(locale, "converter.wasmAccept")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // ConversionArea
 // ---------------------------------------------------------------------------
 
@@ -1383,8 +1443,18 @@ function ConversionArea({
   }
 
   if (state.converting) {
-    const currentFile = state.files[state.currentFileIndex];
-    const currentProgress = currentFile?.progress ?? 0;
+    const doneCount = state.files.filter(
+      (f) => f.status === "completed" || f.status === "error",
+    ).length;
+    const total = state.files.length;
+    // Overall progress: completed files count as 100%, in-progress as their %
+    const overallProgress = Math.round(
+      state.files.reduce((sum, f) => {
+        if (f.status === "completed") return sum + 100;
+        if (f.status === "converting") return sum + f.progress;
+        return sum;
+      }, 0) / total,
+    );
 
     return (
       <div className="space-y-3">
@@ -1393,12 +1463,12 @@ function ConversionArea({
             <span className="text-sm text-muted-foreground">
               {t(locale, "converter.converting")}{" "}
               <span className="font-mono text-foreground">
-                {state.currentFileIndex + 1}/{state.files.length}
+                {doneCount}/{total}
               </span>
             </span>
             <div className="flex items-center gap-3">
               <span className="font-mono text-sm text-foreground">
-                {currentProgress}%
+                {overallProgress}%
               </span>
               <button
                 onClick={onCancel}
@@ -1411,15 +1481,10 @@ function ConversionArea({
           <div className="h-1.5 w-full bg-border">
             <div
               className="h-full bg-primary transition-all duration-300 ease-out"
-              style={{ width: `${currentProgress}%` }}
+              style={{ width: `${overallProgress}%` }}
             />
           </div>
         </div>
-        {currentFile && (
-          <p className="truncate text-xs text-muted-foreground/70">
-            {currentFile.file.name}
-          </p>
-        )}
         <p className="text-xs text-muted-foreground/70">
           {t(locale, "converter.slowNotice")}
         </p>
@@ -1459,6 +1524,9 @@ export default function Converter({
     getInitialState,
   );
   const cancelledRef = useRef(false);
+  const [showWasmDialog, setShowWasmDialog] = useState(
+    () => !isLoaded() && !isPromptDismissed(),
+  );
 
   // Initialise from URL hash
   useEffect(() => {
@@ -1526,11 +1594,14 @@ export default function Converter({
   );
 
   const handleConvert = useCallback(async () => {
-    const filesToConvert = state.files;
-    if (filesToConvert.length === 0) return;
+    const tasks = state.files
+      .map((entry, index) => ({ entry, index }))
+      .filter(({ entry }) => entry.status !== "completed");
+    if (tasks.length === 0) return;
 
     cancelledRef.current = false;
 
+    // Ensure FFmpeg WASM is available (may already be preloaded)
     dispatch({ type: "FFMPEG_LOADING" });
     try {
       await getFFmpeg();
@@ -1543,50 +1614,77 @@ export default function Converter({
       return;
     }
 
-    for (let i = 0; i < filesToConvert.length; i++) {
-      if (cancelledRef.current) break;
+    // Build shared conversion settings
+    const format = getFormatById(state.outputFormatId)!;
+    const codec = getCodecById(format, state.codecId)!;
+    const settings =
+      format.type === "audio" ? state.audioSettings : state.videoSettings;
+    const args = buildFFmpegArgs({ format, codec, settings });
 
-      const entry = filesToConvert[i];
-      if (entry.status === "completed") continue;
-
-      dispatch({ type: "CONVERT_FILE_START", index: i });
-
-      try {
-        const format = getFormatById(state.outputFormatId)!;
-        const codec = getCodecById(format, state.codecId)!;
-        const settings =
-          format.type === "audio"
-            ? state.audioSettings
-            : state.videoSettings;
-        const args = buildFFmpegArgs({ format, codec, settings });
-        const outputName = getOutputFileName(
-          entry.file.name,
-          format.extension,
-        );
-
-        const result = await convert(entry.file, outputName, args, (p) =>
-          dispatch({ type: "CONVERT_FILE_PROGRESS", index: i, progress: p }),
-        );
-
-        dispatch({
-          type: "CONVERT_FILE_COMPLETE",
-          index: i,
-          data: result.data,
-          size: result.size,
-          fileName: outputName,
-        });
-
-        // Auto-download on completion
-        triggerDownload(result.data, outputName);
-      } catch (err) {
-        if (cancelledRef.current) break;
-        dispatch({
-          type: "CONVERT_FILE_ERROR",
-          index: i,
-          error: String(err),
-        });
+    // Create worker pool
+    const POOL_SIZE = Math.min(2, tasks.length);
+    const workers: Awaited<ReturnType<typeof createWorker>>[] = [];
+    try {
+      for (let w = 0; w < POOL_SIZE; w++) {
+        workers.push(await createWorker());
       }
+    } catch (err) {
+      for (const w of workers) releaseWorker(w);
+      dispatch({
+        type: "CONVERT_ERROR",
+        error: `Failed to initialise workers: ${err instanceof Error ? err.message : String(err)}`,
+      });
+      return;
     }
+
+    // Dispatch: mark all files as converting started
+    dispatch({ type: "CONVERT_START" });
+
+    // Shared task index – safe because JS is single-threaded between awaits
+    let nextTask = 0;
+
+    const processNext = async (worker: Awaited<ReturnType<typeof createWorker>>) => {
+      while (nextTask < tasks.length && !cancelledRef.current) {
+        const { entry, index } = tasks[nextTask++];
+
+        dispatch({ type: "CONVERT_FILE_START", index });
+
+        const outputName = getOutputFileName(entry.file.name, format.extension);
+
+        try {
+          const result = await convertWithWorker(
+            worker,
+            entry.file,
+            outputName,
+            args,
+            (p) => dispatch({ type: "CONVERT_FILE_PROGRESS", index, progress: p }),
+          );
+
+          dispatch({
+            type: "CONVERT_FILE_COMPLETE",
+            index,
+            data: result.data,
+            size: result.size,
+            fileName: outputName,
+          });
+
+          // Auto-download on completion
+          triggerDownload(result.data, outputName);
+        } catch (err) {
+          if (cancelledRef.current) break;
+          dispatch({
+            type: "CONVERT_FILE_ERROR",
+            index,
+            error: String(err),
+          });
+        }
+      }
+    };
+
+    await Promise.all(workers.map((w) => processNext(w)));
+
+    // Cleanup workers
+    for (const w of workers) releaseWorker(w);
   }, [
     state.files,
     state.outputFormatId,
@@ -1597,7 +1695,7 @@ export default function Converter({
 
   const handleCancel = useCallback(() => {
     cancelledRef.current = true;
-    cancel();
+    cancelAll();
     dispatch({ type: "CONVERT_CANCEL" });
   }, []);
 
@@ -1635,6 +1733,13 @@ export default function Converter({
 
   return (
     <div className="space-y-4">
+      {showWasmDialog && (
+        <WasmDialog
+          onClose={() => setShowWasmDialog(false)}
+          locale={locale}
+        />
+      )}
+
       {/* File input */}
       {state.files.length === 0 ? (
         <DropZone onFiles={handleAddFiles} locale={locale} />

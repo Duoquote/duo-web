@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sun, Moon } from "lucide-react";
-import { FaGithub } from "react-icons/fa";
+import { Sun, Moon, Github } from "lucide-react";
 import { t, getLocalizedPath, type Locale } from "../lib/i18n";
 
 function getIsDark() {
@@ -69,7 +68,7 @@ export default function Header({ locale = "en" }: { locale?: Locale }) {
             className="p-1.5 text-muted-foreground border border-border transition-colors hover:text-foreground hover:border-primary/30"
             aria-label="GitHub"
           >
-            <FaGithub size={14} />
+            <Github className="h-3.5 w-3.5" />
           </a>
           <button
             onClick={toggleTheme}

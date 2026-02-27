@@ -7,11 +7,31 @@ const CORE_VERSION = "0.12.10";
 const CORE_CDN = `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${CORE_VERSION}/dist/esm`;
 const WORKER_CDN = `https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@${FFMPEG_VERSION}/dist/esm/worker.js`;
 
-let ffmpegInstance: FFmpeg | null = null;
-let loaded = false;
-
 export type ProgressCallback = (progress: number) => void;
 export type LogCallback = (message: string) => void;
+
+// ---------------------------------------------------------------------------
+// Shared load config
+// ---------------------------------------------------------------------------
+
+function makeWorkerURL(): string {
+  const workerBlob = new Blob([`import "${WORKER_CDN}";`], {
+    type: "text/javascript",
+  });
+  return URL.createObjectURL(workerBlob);
+}
+
+const loadConfig = {
+  coreURL: `${CORE_CDN}/ffmpeg-core.js`,
+  wasmURL: `${CORE_CDN}/ffmpeg-core.wasm`,
+};
+
+// ---------------------------------------------------------------------------
+// Singleton (used for preloading / single-file fallback)
+// ---------------------------------------------------------------------------
+
+let ffmpegInstance: FFmpeg | null = null;
+let loaded = false;
 
 export async function getFFmpeg(onLog?: LogCallback): Promise<FFmpeg> {
   if (ffmpegInstance && loaded) return ffmpegInstance;
@@ -22,67 +42,112 @@ export async function getFFmpeg(onLog?: LogCallback): Promise<FFmpeg> {
     ffmpegInstance.on("log", ({ message }) => onLog(message));
   }
 
-  // Vite doesn't transform the `new URL("./worker.js", import.meta.url)`
-  // pattern inside node_modules, so the default worker path is broken.
-  // Work around this by creating a same-origin blob worker that re-imports
-  // the real worker from jsDelivr CDN (which serves CORS headers).
-  const workerBlob = new Blob([`import "${WORKER_CDN}";`], {
-    type: "text/javascript",
-  });
-  const classWorkerURL = URL.createObjectURL(workerBlob);
-
-  await ffmpegInstance.load({
-    classWorkerURL,
-    coreURL: `${CORE_CDN}/ffmpeg-core.js`,
-    wasmURL: `${CORE_CDN}/ffmpeg-core.wasm`,
-  });
+  await ffmpegInstance.load({ classWorkerURL: makeWorkerURL(), ...loadConfig });
   loaded = true;
 
   return ffmpegInstance;
 }
 
-export async function convert(
+export function isLoaded(): boolean {
+  return loaded;
+}
+
+// ---------------------------------------------------------------------------
+// Worker pool for parallel conversion
+// ---------------------------------------------------------------------------
+
+const activeWorkers = new Set<FFmpeg>();
+
+export async function createWorker(): Promise<FFmpeg> {
+  const instance = new FFmpeg();
+  await instance.load({ classWorkerURL: makeWorkerURL(), ...loadConfig });
+  activeWorkers.add(instance);
+  return instance;
+}
+
+export function releaseWorker(instance: FFmpeg): void {
+  activeWorkers.delete(instance);
+  try {
+    instance.terminate();
+  } catch {}
+}
+
+export async function convertWithWorker(
+  worker: FFmpeg,
   inputFile: File,
   outputFileName: string,
   ffmpegArgs: string[],
   onProgress?: ProgressCallback,
 ): Promise<{ data: Uint8Array; size: number }> {
-  const ffmpeg = await getFFmpeg();
-
   const progressHandler = onProgress
     ? ({ progress }: { progress: number }) =>
         onProgress(Math.min(Math.round(progress * 100), 100))
     : undefined;
 
   if (progressHandler) {
-    ffmpeg.on("progress", progressHandler);
+    worker.on("progress", progressHandler);
   }
 
   try {
     const inputData = await fetchFile(inputFile);
-    await ffmpeg.writeFile("input", inputData);
+    await worker.writeFile("input", inputData);
 
-    await ffmpeg.exec(["-i", "input", ...ffmpegArgs, outputFileName]);
+    await worker.exec(["-i", "input", ...ffmpegArgs, outputFileName]);
 
-    const outputData = await ffmpeg.readFile(outputFileName);
+    const outputData = await worker.readFile(outputFileName);
     const data = outputData as Uint8Array;
 
     return { data, size: data.byteLength };
   } finally {
     try {
-      await ffmpeg.deleteFile("input");
+      await worker.deleteFile("input");
     } catch {}
     try {
-      await ffmpeg.deleteFile(outputFileName);
+      await worker.deleteFile(outputFileName);
     } catch {}
 
     if (progressHandler) {
-      ffmpeg.off("progress", progressHandler);
+      worker.off("progress", progressHandler);
     }
   }
 }
 
-export function cancel(): void {
+// ---------------------------------------------------------------------------
+// Prompt dismiss preference
+// ---------------------------------------------------------------------------
+
+const DISMISS_KEY = "ffmpeg-wasm-prompt-dismissed";
+
+export function isPromptDismissed(): boolean {
+  try {
+    return localStorage.getItem(DISMISS_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function setPromptDismissed(dismissed: boolean): void {
+  try {
+    if (dismissed) {
+      localStorage.setItem(DISMISS_KEY, "1");
+    } else {
+      localStorage.removeItem(DISMISS_KEY);
+    }
+  } catch {}
+}
+
+// ---------------------------------------------------------------------------
+// Cancellation & cleanup
+// ---------------------------------------------------------------------------
+
+export function cancelAll(): void {
+  for (const w of activeWorkers) {
+    try {
+      w.terminate();
+    } catch {}
+  }
+  activeWorkers.clear();
+
   if (ffmpegInstance) {
     ffmpegInstance.terminate();
     ffmpegInstance = null;
@@ -91,9 +156,5 @@ export function cancel(): void {
 }
 
 export function terminate(): void {
-  if (ffmpegInstance) {
-    ffmpegInstance.terminate();
-    ffmpegInstance = null;
-    loaded = false;
-  }
+  cancelAll();
 }
