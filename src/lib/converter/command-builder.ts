@@ -89,9 +89,15 @@ function buildVideoArgs(
       args.push("-ac", s.audioChannels);
     }
 
-    // Telephone-style bandpass filter for pixel/funny mode (8kHz sample rate)
+    // Crushed audio for pixel/funny mode:
+    // 1. volume=6  → overdrive the full signal (bass clips hardest)
+    // 2. alimiter   → hard-cap the clipped peaks
+    // 3. bandpass   → shape into telephone bandwidth
     if (s.audioSampleRate === "8000") {
-      args.push("-af", "highpass=f=300,lowpass=f=3400");
+      args.push(
+        "-af",
+        "volume=6,alimiter=limit=0.8,highpass=f=80,lowpass=f=3400",
+      );
     }
   }
 
@@ -130,9 +136,15 @@ function buildAudioArgs(
     args.push("-ac", s.channels);
   }
 
-  // Telephone-style bandpass filter for pixel/funny mode (8kHz sample rate)
+  // Crushed audio for pixel/funny mode:
+  // 1. volume=6  → overdrive the full signal (bass clips hardest)
+  // 2. alimiter   → hard-cap the clipped peaks
+  // 3. bandpass   → shape into telephone bandwidth
   if (s.sampleRate === "8000") {
-    args.push("-af", "highpass=f=300,lowpass=f=3400");
+    args.push(
+      "-af",
+      "volume=6,alimiter=limit=0.8,highpass=f=80,lowpass=f=3400",
+    );
   }
 
   return args;

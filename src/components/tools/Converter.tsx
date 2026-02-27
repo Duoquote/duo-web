@@ -850,6 +850,7 @@ function FormatSelector({
   onFormatChange,
   onCodecChange,
   onScaleChange,
+  scaleDisabled,
   locale,
 }: {
   outputFormatId: string;
@@ -858,6 +859,7 @@ function FormatSelector({
   onFormatChange: (id: string) => void;
   onCodecChange: (id: string) => void;
   onScaleChange: (value: string) => void;
+  scaleDisabled?: boolean;
   locale: Locale;
 }) {
   const format = getFormatById(outputFormatId);
@@ -923,6 +925,7 @@ function FormatSelector({
             value={scale}
             onChange={(e) => onScaleChange(e.target.value)}
             className={selectClass}
+            disabled={scaleDisabled}
           >
             <option value="1">1x</option>
             <option value="0.75">0.75x</option>
@@ -1227,6 +1230,7 @@ function AdvancedSettings({
   audioSettings,
   onVideoChange,
   onAudioChange,
+  disabled,
   locale,
 }: {
   open: boolean;
@@ -1242,25 +1246,27 @@ function AdvancedSettings({
     key: keyof AudioAdvancedSettings,
     value: string,
   ) => void;
+  disabled?: boolean;
   locale: Locale;
 }) {
   const isVideo = format.type === "video" || format.type === "image";
 
   return (
-    <div className="border border-border">
+    <div className={cn("border border-border", disabled && "opacity-50")}>
       <button
         onClick={onToggle}
-        className="flex w-full items-center justify-between px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        disabled={disabled}
+        className="flex w-full items-center justify-between px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none"
       >
         <span>{t(locale, "converter.advanced")}</span>
         <ChevronDown
           className={cn(
             "h-4 w-4 transition-transform duration-200",
-            open && "rotate-180",
+            open && !disabled && "rotate-180",
           )}
         />
       </button>
-      {open && (
+      {open && !disabled && (
         <div className="border-t border-border px-3 pb-3 pt-2">
           {isVideo ? (
             <VideoSettings
@@ -1615,6 +1621,7 @@ export default function Converter({
 
   const format = getFormatById(state.outputFormatId);
   const isProcessing = state.ffmpegLoading || state.converting;
+  const isPixel = state.preset === "pixel";
   const showPresets =
     format &&
     format.type !== "image" &&
@@ -1670,10 +1677,12 @@ export default function Converter({
             onScaleChange={(value) =>
               dispatch({ type: "SET_VIDEO_SETTING", key: "scale", value })
             }
+            scaleDisabled={isPixel}
             locale={locale}
           />
 
           {format &&
+            !isPixel &&
             (format.type === "video" || format.type === "image") &&
             firstDims?.sourceWidth !== undefined &&
             firstDims?.sourceWidth !== null && (
@@ -1765,6 +1774,7 @@ export default function Converter({
               onAudioChange={(key, value) =>
                 dispatch({ type: "SET_AUDIO_SETTING", key, value })
               }
+              disabled={isPixel}
               locale={locale}
             />
           )}
