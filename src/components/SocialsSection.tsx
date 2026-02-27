@@ -1,11 +1,14 @@
 import { t, type Locale } from "../lib/i18n";
 
+// Obfuscated to prevent spam bots from scraping
+const emailUser = "guven";
+const emailDomain = "dq.ms";
+
 const commands = [
   { prompt: "$ whoami", response: "güven değirmenci" },
   {
     prompt: "$ contact --email",
-    response: "hello@guvendegirmenci.com",
-    href: "mailto:hello@guvendegirmenci.com",
+    obfuscatedEmail: true,
   },
   {
     prompt: "$ socials --list",
@@ -39,17 +42,20 @@ export default function SocialsSection({ locale = "en" }: { locale?: Locale }) {
             {commands.map((cmd, i) => (
               <div key={i}>
                 <div className="text-muted-foreground">{cmd.prompt}</div>
+                {"obfuscatedEmail" in cmd && (
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.location.href = `mailto:${emailUser}@${emailDomain}`;
+                    }}
+                    className="text-primary no-underline hover:text-primary/80 transition-colors"
+                  >
+                    {">"} {emailUser}&#64;{emailDomain}
+                  </a>
+                )}
                 {"response" in cmd && (
-                  cmd.href ? (
-                    <a
-                      href={cmd.href}
-                      className="text-primary no-underline hover:text-primary/80 transition-colors"
-                    >
-                      {">"} {cmd.response}
-                    </a>
-                  ) : (
-                    <div className="text-foreground">{">"} {cmd.response}</div>
-                  )
+                  <div className="text-foreground">{">"} {cmd.response}</div>
                 )}
                 {"links" in cmd && (
                   <div className="flex flex-wrap gap-x-2">
