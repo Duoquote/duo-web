@@ -47,6 +47,11 @@ const translations = {
     "tools.converter.description":
       "Convert video and audio files in your browser.",
 
+    // Geo Viewer tool listing
+    "tools.geoViewer.name": "Geo Viewer",
+    "tools.geoViewer.description":
+      "View GeoJSON, Shapefile & KML files on a map.",
+
     // H3 Explorer
     "h3.backToTools": "← Back to tools",
     "h3.heading": "H3 Explorer",
@@ -110,11 +115,39 @@ const translations = {
     "converter.slowNotice":
       "Conversion runs entirely in your browser via WebAssembly — this is slower than native and may take a while for large files. This is normal.",
 
+    // Geo Viewer
+    "geoViewer.backToTools": "\u2190 Back to tools",
+    "geoViewer.heading": "Geo Viewer",
+    "geoViewer.description":
+      "Drop a GeoJSON, Shapefile (ZIP), or KML file to visualize on an interactive map. All processing in your browser.",
+    "geoViewer.dropzone": "Drop a file here or click to browse",
+    "geoViewer.dropzoneActive": "Drop it!",
+    "geoViewer.dropzoneHint": "Supports .geojson, .json, .kml, .zip (shapefile)",
+    "geoViewer.loading": "Parsing file...",
+    "geoViewer.features": "features",
+    "geoViewer.vertices": "vertices",
+    "geoViewer.properties": "Properties",
+    "geoViewer.noSelection": "Click a feature on the map to inspect",
+    "geoViewer.fitBounds": "Fit to data",
+    "geoViewer.loadAnother": "Load another",
+    "geoViewer.copyJson": "Copy JSON",
+    "geoViewer.copied": "Copied!",
+    "geoViewer.errorFormat": "Unsupported file format",
+    "geoViewer.errorParse": "Failed to parse file",
+    "geoViewer.errorNoFeatures": "No features found",
+    "geoViewer.errorShpZip": "Shapefiles must be provided as a .zip",
+
     // SEO — Converter
     "seo.converter.title":
       "Video Converter — Convert Video & Audio in Your Browser",
     "seo.converter.description":
       "Free online video converter. Convert MP4, WebM, MKV, MP3, AAC, GIF and more entirely in your browser with ffmpeg.wasm. No upload required.",
+
+    // SEO — Geo Viewer
+    "seo.geoViewer.title":
+      "Geo Viewer \u2014 View GeoJSON, Shapefile & KML on a Map",
+    "seo.geoViewer.description":
+      "Free online tool to visualize GeoJSON, Shapefile, and KML files on an interactive WebGL map. No upload, no server.",
 
     // Links page
     "links.label": "Links",
@@ -200,6 +233,11 @@ const translations = {
     "tools.converter.description":
       "Video ve ses dosyalarını tarayıcınızda dönüştürün.",
 
+    // Geo Viewer tool listing
+    "tools.geoViewer.name": "Geo Görüntüleyici",
+    "tools.geoViewer.description":
+      "GeoJSON, Shapefile ve KML dosyalarını haritada görüntüleyin.",
+
     // H3 Explorer
     "h3.backToTools": "← Araçlara dön",
     "h3.heading": "H3 Gezgini",
@@ -264,11 +302,40 @@ const translations = {
     "converter.slowNotice":
       "Dönüştürme tamamen tarayıcınızda WebAssembly ile çalışır — bu, yerel işlemden daha yavaştır ve büyük dosyalarda zaman alabilir. Bu normaldir.",
 
+    // Geo Viewer
+    "geoViewer.backToTools": "\u2190 Araçlara dön",
+    "geoViewer.heading": "Geo Görüntüleyici",
+    "geoViewer.description":
+      "GeoJSON, Shapefile (ZIP) veya KML dosyasını interaktif haritada görselleştirmek için sürükleyin. Tüm işlemler tarayıcınızda.",
+    "geoViewer.dropzone": "Bir dosya sürükleyin veya tıklayıp seçin",
+    "geoViewer.dropzoneActive": "Bırakın!",
+    "geoViewer.dropzoneHint":
+      ".geojson, .json, .kml, .zip (shapefile) desteklenir",
+    "geoViewer.loading": "Dosya ayrıştırılıyor...",
+    "geoViewer.features": "özellik",
+    "geoViewer.vertices": "köşe",
+    "geoViewer.properties": "Özellikler",
+    "geoViewer.noSelection": "İncelemek için haritada bir özelliğe tıklayın",
+    "geoViewer.fitBounds": "Veriye sığdır",
+    "geoViewer.loadAnother": "Başka yükle",
+    "geoViewer.copyJson": "JSON Kopyala",
+    "geoViewer.copied": "Kopyalandı!",
+    "geoViewer.errorFormat": "Desteklenmeyen dosya formatı",
+    "geoViewer.errorParse": "Dosya ayrıştırılamadı",
+    "geoViewer.errorNoFeatures": "Özellik bulunamadı",
+    "geoViewer.errorShpZip": "Shapefile dosyaları .zip olarak sağlanmalıdır",
+
     // SEO — Converter
     "seo.converter.title":
       "Video Dönüştürücü — Tarayıcınızda Video ve Ses Dönüştürün",
     "seo.converter.description":
       "Ücretsiz çevrimiçi video dönüştürücü. MP4, WebM, MKV, MP3, AAC, GIF ve daha fazlasını ffmpeg.wasm ile tamamen tarayıcınızda dönüştürün. Yükleme gerekmez.",
+
+    // SEO — Geo Viewer
+    "seo.geoViewer.title":
+      "Geo Görüntüleyici \u2014 GeoJSON, Shapefile ve KML Haritada Görüntüle",
+    "seo.geoViewer.description":
+      "GeoJSON, Shapefile ve KML dosyalarını interaktif WebGL haritada görselleştirmek için ücretsiz çevrimiçi araç. Yükleme yok, sunucu yok.",
 
     // Links page
     "links.label": "Bağlantılar",

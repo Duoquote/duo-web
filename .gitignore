@@ -4,3 +4,5 @@ dist/
 .env
 .env.*
 !.env.example
+wasm/geo-parser/pkg/
+wasm/geo-parser/target/

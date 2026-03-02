@@ -1,0 +1,35 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import GridBackground from "../../components/GridBackground";
+import Header from "../../components/Header";
+import GeoViewer from "../../components/tools/GeoViewer";
+import { t, getLocalizedPath } from "../../lib/i18n";
+
+const locale = "en" as const;
+---
+
+<Layout
+  title={t(locale, "seo.geoViewer.title")}
+  description={t(locale, "seo.geoViewer.description")}
+  locale={locale}
+>
+  <GridBackground client:load />
+  <Header client:load locale={locale} />
+  <main class="relative z-10 mx-auto max-w-5xl px-4 pt-20 pb-4 md:px-6 h-svh flex flex-col">
+    <a href={getLocalizedPath(locale, "/tools")} class="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
+      {t(locale, "geoViewer.backToTools")}
+    </a>
+    <h1 class="mb-2 text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+      {t(locale, "geoViewer.heading")}
+    </h1>
+    <p class="mb-6 text-sm text-muted-foreground">
+      {t(locale, "geoViewer.description")}
+    </p>
+    <div class="flex-1 min-h-0">
+      <GeoViewer client:only="react" locale={locale} />
+    </div>
+    <p class="py-4 text-xs text-muted-foreground/50">
+      Powered by <a href="https://deck.gl" class="underline hover:text-muted-foreground" target="_blank" rel="noopener noreferrer">Deck.gl</a> & <a href="https://maplibre.org" class="underline hover:text-muted-foreground" target="_blank" rel="noopener noreferrer">MapLibre GL JS</a>
+    </p>
+  </main>
+</Layout>

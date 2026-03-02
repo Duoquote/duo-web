@@ -181,6 +181,29 @@
   border-top-color: oklch(0 0 0 / 10%) !important;
 }
 
+/* Dark-themed MapLibre GL controls */
+.dark .maplibregl-ctrl-group {
+  background: oklch(0.205 0 0) !important;
+  border-color: oklch(1 0 0 / 10%) !important;
+}
+
+.dark .maplibregl-ctrl-group button + button {
+  border-top-color: oklch(1 0 0 / 10%) !important;
+}
+
+.dark .maplibregl-ctrl-group button span {
+  filter: invert(1);
+}
+
+.dark .maplibregl-ctrl-attrib {
+  background: oklch(0.145 0 0 / 80%) !important;
+  color: oklch(0.708 0 0) !important;
+}
+
+.dark .maplibregl-ctrl-attrib a {
+  color: oklch(0.645 0.246 16.439) !important;
+}
+
 .dark .h3-tooltip {
   background: oklch(0.145 0 0 / 85%) !important;
   border: 1px solid oklch(1 0 0 / 10%) !important;
@@ -189,4 +212,22 @@
 
 .dark .h3-tooltip::before {
   border-top-color: oklch(1 0 0 / 10%) !important;
+}
+
+/* Geo Viewer tooltip */
+.geo-tooltip {
+  backdrop-filter: blur(8px);
+  font-family: "Google Sans", ui-monospace, monospace;
+  font-size: 11px;
+  padding: 4px 8px;
+  white-space: nowrap;
+  background: oklch(1 0 0 / 90%);
+  border: 1px solid oklch(0 0 0 / 10%);
+  color: oklch(0.145 0 0);
+}
+
+.dark .geo-tooltip {
+  background: oklch(0.145 0 0 / 85%);
+  border: 1px solid oklch(1 0 0 / 10%);
+  color: oklch(0.985 0 0);
 }
