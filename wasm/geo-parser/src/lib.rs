@@ -1,16 +1,18 @@
 mod binary;
 mod feature;
-mod properties;
 mod scanner;
+mod spatial;
 mod winding;
 
-use js_sys::{Array, Float64Array, Uint32Array};
+use js_sys::{Float64Array, Uint32Array};
 use wasm_bindgen::prelude::*;
 
 use binary::BinaryBuilder;
 use scanner::Scanner;
 
-/// Main WASM API. Create with `new()`, push chunks, finalize, then read typed arrays.
+/// Main WASM API. Create with `new()`, push chunks, finalize, then use
+/// viewport-based rendering. Properties are loaded lazily via File.slice()
+/// using the file offsets stored per feature.
 #[wasm_bindgen]
 pub struct GeoParser {
     scanner: Scanner,
@@ -30,15 +32,26 @@ impl GeoParser {
         }
     }
 
+    /// Create a parser in line-delimited mode (.geojsonl / .ndjson / .jsonl).
+    /// Each top-level `{...}` object is treated as a standalone Feature.
+    pub fn new_line_delimited() -> GeoParser {
+        console_error_panic_hook::set_once();
+        GeoParser {
+            scanner: Scanner::new_line_delimited(),
+            builder: BinaryBuilder::new(),
+            feature_count: 0,
+        }
+    }
+
     /// Push a file chunk (Uint8Array from ReadableStream). Returns features parsed in this chunk.
     pub fn push_chunk(&mut self, chunk: &[u8]) -> u32 {
         let builder = &mut self.builder;
         let fc = &mut self.feature_count;
 
-        self.scanner.push_chunk(chunk, |feature_bytes| {
+        self.scanner.push_chunk(chunk, |feature_bytes, file_offset| {
             match feature::parse_feature(feature_bytes) {
                 Ok(parsed) => {
-                    builder.add_feature(&parsed);
+                    builder.add_feature(&parsed, file_offset, feature_bytes.len() as u32);
                     *fc += 1;
                 }
                 Err(_) => { /* skip malformed features */ }
@@ -46,125 +59,25 @@ impl GeoParser {
         })
     }
 
-    /// Call after all chunks. Adds sentinel values to index arrays and finalizes properties.
+    /// Call after all chunks. Adds sentinel values to index arrays.
     pub fn finalize(&mut self) -> u32 {
         self.builder.finalize();
         self.feature_count
     }
 
-    // ── Typed array getters ─────────────────────────────────────
+    // ── Feature property offset lookup ──────────────────────────
 
-    pub fn point_positions(&self) -> Float64Array {
-        vec_to_f64_array(&self.builder.point_positions)
-    }
-
-    pub fn point_feature_ids(&self) -> Uint32Array {
-        vec_to_u32_array(&self.builder.point_feature_ids)
-    }
-
-    pub fn point_global_feature_ids(&self) -> Uint32Array {
-        vec_to_u32_array(&self.builder.point_global_feature_ids)
-    }
-
-    pub fn line_positions(&self) -> Float64Array {
-        vec_to_f64_array(&self.builder.line_positions)
-    }
-
-    pub fn line_path_indices(&self) -> Uint32Array {
-        vec_to_u32_array(&self.builder.line_path_indices)
-    }
-
-    pub fn line_feature_ids(&self) -> Uint32Array {
-        vec_to_u32_array(&self.builder.line_feature_ids)
-    }
-
-    pub fn line_global_feature_ids(&self) -> Uint32Array {
-        vec_to_u32_array(&self.builder.line_global_feature_ids)
-    }
-
-    pub fn polygon_positions(&self) -> Float64Array {
-        vec_to_f64_array(&self.builder.polygon_positions)
-    }
-
-    pub fn polygon_indices(&self) -> Uint32Array {
-        vec_to_u32_array(&self.builder.polygon_indices)
-    }
-
-    pub fn primitive_polygon_indices(&self) -> Uint32Array {
-        vec_to_u32_array(&self.builder.primitive_polygon_indices)
-    }
-
-    pub fn polygon_feature_ids(&self) -> Uint32Array {
-        vec_to_u32_array(&self.builder.polygon_feature_ids)
-    }
-
-    pub fn polygon_global_feature_ids(&self) -> Uint32Array {
-        vec_to_u32_array(&self.builder.polygon_global_feature_ids)
-    }
-
-    // ── Properties ─────────────────────────────────────────────
-
-    /// Get names of numeric properties (sorted).
-    pub fn numeric_prop_names(&self) -> Array {
-        let names = self.builder.property_store.numeric_property_names();
-        let arr = Array::new();
-        for name in &names {
-            arr.push(&JsValue::from_str(name));
+    /// Get the file byte offset and length of a feature's JSON bytes.
+    /// Returns a Float64Array [offset, length] (f64 to safely represent u64 up to 2^53).
+    /// The worker uses this with File.slice(offset, offset+length) to re-read properties.
+    pub fn get_feature_offset(&self, feature_index: u32) -> Float64Array {
+        let idx = feature_index as usize;
+        let arr = Float64Array::new_with_length(2);
+        if idx < self.builder.feature_file_offsets.len() {
+            arr.set_index(0, self.builder.feature_file_offsets[idx] as f64);
+            arr.set_index(1, self.builder.feature_byte_lengths[idx] as f64);
         }
         arr
-    }
-
-    /// Get numeric property column for points.
-    pub fn numeric_prop_points(&self, name: &str) -> Float64Array {
-        match self.builder.property_store.point_numerics.get(name) {
-            Some(v) => vec_to_f64_array(v),
-            None => Float64Array::new_with_length(0),
-        }
-    }
-
-    /// Get numeric property column for lines.
-    pub fn numeric_prop_lines(&self, name: &str) -> Float64Array {
-        match self.builder.property_store.line_numerics.get(name) {
-            Some(v) => vec_to_f64_array(v),
-            None => Float64Array::new_with_length(0),
-        }
-    }
-
-    /// Get numeric property column for polygons.
-    pub fn numeric_prop_polygons(&self, name: &str) -> Float64Array {
-        match self.builder.property_store.polygon_numerics.get(name) {
-            Some(v) => vec_to_f64_array(v),
-            None => Float64Array::new_with_length(0),
-        }
-    }
-
-    /// Get per-feature property objects for points (JSON strings parsed to JS objects).
-    pub fn point_properties(&self) -> Array {
-        props_to_array(&self.builder.point_properties)
-    }
-
-    /// Get per-feature property objects for lines.
-    pub fn line_properties(&self) -> Array {
-        props_to_array(&self.builder.line_properties)
-    }
-
-    /// Get per-feature property objects for polygons.
-    pub fn polygon_properties(&self) -> Array {
-        props_to_array(&self.builder.polygon_properties)
-    }
-
-    /// Get properties for a specific feature by global index (for lazy sidebar loading).
-    pub fn get_properties(&self, feature_index: u32) -> JsValue {
-        let idx = feature_index as usize;
-        if idx < self.builder.all_feature_props.len() {
-            let json = &self.builder.all_feature_props[idx];
-            match js_sys::JSON::parse(json) {
-                Ok(val) => val,
-                Err(_) => JsValue::NULL,
-            }
-        } else {
-            JsValue::NULL
-        }
     }
 
     // ── Stats ──────────────────────────────────────────────────
@@ -184,6 +97,73 @@ impl GeoParser {
     pub fn bbox(&self) -> Float64Array {
         vec_to_f64_array(&self.builder.bbox.to_vec())
     }
+
+    // ── Viewport-filtered rendering ─────────────────────────────
+
+    /// Build viewport-filtered binary arrays. Returns visible feature count.
+    /// `min_extent`: LOD threshold in degrees — non-point features smaller than this are skipped.
+    pub fn build_viewport(
+        &mut self,
+        min_lng: f64,
+        min_lat: f64,
+        max_lng: f64,
+        max_lat: f64,
+        min_extent: f64,
+    ) -> u32 {
+        self.builder.build_viewport(min_lng, min_lat, max_lng, max_lat, min_extent)
+    }
+
+    pub fn vp_point_positions(&self) -> Float64Array {
+        vec_to_f64_array(&self.builder.vp_point_positions)
+    }
+
+    pub fn vp_point_feature_ids(&self) -> Uint32Array {
+        vec_to_u32_array(&self.builder.vp_point_feature_ids)
+    }
+
+    pub fn vp_point_global_feature_ids(&self) -> Uint32Array {
+        vec_to_u32_array(&self.builder.vp_point_global_feature_ids)
+    }
+
+    pub fn vp_line_positions(&self) -> Float64Array {
+        vec_to_f64_array(&self.builder.vp_line_positions)
+    }
+
+    pub fn vp_line_path_indices(&self) -> Uint32Array {
+        vec_to_u32_array(&self.builder.vp_line_path_indices)
+    }
+
+    pub fn vp_line_feature_ids(&self) -> Uint32Array {
+        vec_to_u32_array(&self.builder.vp_line_feature_ids)
+    }
+
+    pub fn vp_line_global_feature_ids(&self) -> Uint32Array {
+        vec_to_u32_array(&self.builder.vp_line_global_feature_ids)
+    }
+
+    pub fn vp_polygon_positions(&self) -> Float64Array {
+        vec_to_f64_array(&self.builder.vp_polygon_positions)
+    }
+
+    pub fn vp_polygon_indices(&self) -> Uint32Array {
+        vec_to_u32_array(&self.builder.vp_polygon_indices)
+    }
+
+    pub fn vp_primitive_polygon_indices(&self) -> Uint32Array {
+        vec_to_u32_array(&self.builder.vp_primitive_polygon_indices)
+    }
+
+    pub fn vp_polygon_feature_ids(&self) -> Uint32Array {
+        vec_to_u32_array(&self.builder.vp_polygon_feature_ids)
+    }
+
+    pub fn vp_polygon_global_feature_ids(&self) -> Uint32Array {
+        vec_to_u32_array(&self.builder.vp_polygon_global_feature_ids)
+    }
+
+    pub fn vp_feature_count(&self) -> u32 {
+        self.builder.vp_feature_count
+    }
 }
 
 // ── Helper functions ──────────────────────────────────────────
@@ -197,16 +177,5 @@ fn vec_to_f64_array(data: &[f64]) -> Float64Array {
 fn vec_to_u32_array(data: &[u32]) -> Uint32Array {
     let arr = Uint32Array::new_with_length(data.len() as u32);
     arr.copy_from(data);
-    arr
-}
-
-fn props_to_array(json_strings: &[String]) -> Array {
-    let arr = Array::new();
-    for json in json_strings {
-        match js_sys::JSON::parse(json) {
-            Ok(val) => { arr.push(&val); }
-            Err(_) => { arr.push(&JsValue::NULL); }
-        }
-    }
     arr
 }

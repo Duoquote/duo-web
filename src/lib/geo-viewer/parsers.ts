@@ -3,6 +3,14 @@ import type { GeoFormat } from "./types";
 export function detectFormat(file: File): GeoFormat | null {
   const name = file.name.toLowerCase();
   if (name.endsWith(".geojson") || name.endsWith(".json")) return "geojson";
+  if (
+    name.endsWith(".geojsonl") ||
+    name.endsWith(".geojsons") ||
+    name.endsWith(".geojson-seq") ||
+    name.endsWith(".ndjson") ||
+    name.endsWith(".jsonl")
+  )
+    return "geojsonl";
   if (name.endsWith(".kml")) return "kml";
   if (name.endsWith(".zip")) return "shapefile";
   return null;

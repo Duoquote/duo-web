@@ -37,25 +37,16 @@ pub struct ParsedGeometry {
 }
 
 #[derive(Debug)]
-pub struct PropertyValue {
-    pub key: String,
-    pub numeric: Option<f64>,
-    pub string: String,
-}
-
-#[derive(Debug)]
 pub struct ParsedFeature {
     pub geometries: Vec<ParsedGeometry>,
-    pub properties: Vec<PropertyValue>,
-    /// Full properties JSON for lazy sidebar lookup
-    pub raw_properties: String,
 }
 
-/// Intermediate deserialization struct
+/// Intermediate deserialization struct.
+/// Properties are NOT deserialized — they are loaded lazily from the
+/// original file via File.slice() using byte offsets from the scanner.
 #[derive(Deserialize)]
 struct RawFeature {
     geometry: Option<RawGeometry>,
-    properties: Option<Value>,
 }
 
 #[derive(Deserialize)]
@@ -80,12 +71,8 @@ pub fn parse_feature(bytes: &[u8]) -> Result<ParsedFeature, String> {
         });
     }
 
-    let (properties, raw_properties) = parse_properties(raw.properties);
-
     Ok(ParsedFeature {
         geometries,
-        properties,
-        raw_properties,
     })
 }
 
@@ -190,39 +177,6 @@ fn parse_coord(value: &Value) -> Option<[f64; 2]> {
     Some([lng, lat])
 }
 
-fn parse_properties(props: Option<Value>) -> (Vec<PropertyValue>, String) {
-    let props = match props {
-        Some(Value::Object(map)) => map,
-        Some(v) => return (Vec::new(), v.to_string()),
-        None => return (Vec::new(), "{}".to_string()),
-    };
-
-    let raw_json = Value::Object(props.clone()).to_string();
-
-    let properties = props
-        .into_iter()
-        .map(|(key, value)| {
-            let numeric = match &value {
-                Value::Number(n) => n.as_f64(),
-                Value::Bool(b) => Some(if *b { 1.0 } else { 0.0 }),
-                _ => None,
-            };
-            let string = match &value {
-                Value::Null => "null".to_string(),
-                Value::String(s) => s.clone(),
-                other => other.to_string(),
-            };
-            PropertyValue {
-                key,
-                numeric,
-                string,
-            }
-        })
-        .collect();
-
-    (properties, raw_json)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -239,7 +193,6 @@ mod tests {
         } else {
             panic!("Expected Single coordinates");
         }
-        assert_eq!(feature.properties.len(), 2);
     }
 
     #[test]
@@ -272,23 +225,11 @@ mod tests {
     }
 
     #[test]
-    fn test_property_types() {
+    fn test_properties_skipped() {
+        // Properties are not deserialized (loaded lazily from file) — just verify
+        // that features with properties still parse correctly.
         let input = br#"{"type":"Feature","geometry":null,"properties":{"num":3.14,"bool":true,"str":"hello","nested":{"a":1}}}"#;
         let feature = parse_feature(input).unwrap();
-        let props = &feature.properties;
-        assert_eq!(props.len(), 4);
-
-        let num = props.iter().find(|p| p.key == "num").unwrap();
-        assert!(num.numeric.is_some());
-        assert!((num.numeric.unwrap() - 3.14).abs() < 1e-10);
-
-        let b = props.iter().find(|p| p.key == "bool").unwrap();
-        assert_eq!(b.numeric, Some(1.0));
-
-        let s = props.iter().find(|p| p.key == "str").unwrap();
-        assert!(s.numeric.is_none());
-
-        let n = props.iter().find(|p| p.key == "nested").unwrap();
-        assert!(n.numeric.is_none());
+        assert_eq!(feature.geometries[0].geometry_type, GeometryType::Null);
     }
 }

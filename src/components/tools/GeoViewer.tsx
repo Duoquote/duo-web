@@ -18,6 +18,23 @@ import {
 import type { WorkerOutput } from "../../lib/geo-viewer/worker";
 import type { BinaryFeatureCollection } from "../../lib/geo-viewer/wasm-shim";
 
+// ── Viewport helpers ────────────────────────────────────────────
+
+/** Expand bounds by a factor (e.g. 0.5 = 50% padding on each side). */
+function padBounds(
+  bounds: [number, number, number, number],
+  factor: number,
+): [number, number, number, number] {
+  const dLng = (bounds[2] - bounds[0]) * factor;
+  const dLat = (bounds[3] - bounds[1]) * factor;
+  return [
+    bounds[0] - dLng,
+    bounds[1] - dLat,
+    bounds[2] + dLng,
+    bounds[3] + dLat,
+  ];
+}
+
 // ── Constants ──────────────────────────────────────────────────
 
 const DARK_STYLE =
@@ -29,7 +46,8 @@ const FILL_COLOR: [number, number, number, number] = [230, 57, 70, 40];
 const LINE_COLOR: [number, number, number, number] = [230, 57, 70, 200];
 const HIGHLIGHT_COLOR: [number, number, number, number] = [230, 57, 70, 120];
 
-const ACCEPTED_EXTENSIONS = ".geojson,.json,.kml,.zip";
+const ACCEPTED_EXTENSIONS =
+  ".geojson,.json,.geojsonl,.geojsons,.geojson-seq,.ndjson,.jsonl,.kml,.zip";
 
 // ── Helpers ────────────────────────────────────────────────────
 
@@ -132,6 +150,7 @@ export default function GeoViewer({ locale }: { locale: Locale }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const coordsRef = useRef<HTMLDivElement>(null);
+  const viewportTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [copied, setCopied] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<{
@@ -194,7 +213,40 @@ export default function GeoViewer({ locale }: { locale: Locale }) {
   );
 
   // ── Deck.gl overlay: Binary mode ──────────────────────────
+  // PERF: autoHighlight OFF, onHover OFF — with 1M+ features the
+  // per-frame GPU picking pass and highlight re-render cause lag.
+  // Click still works (one-shot pick, acceptable latency).
 
+  /** Build a GeoJsonLayer for binary data. Reused by create + update. */
+  const makeBinaryLayer = useCallback(
+    (binary: BinaryFeatureCollection) =>
+      new GeoJsonLayer({
+        id: "geo-viewer-layer",
+        data: binary as any,
+        filled: true,
+        stroked: true,
+        pickable: true,
+        autoHighlight: false,
+        getFillColor: FILL_COLOR,
+        getLineColor: LINE_COLOR,
+        getLineWidth: 1.5,
+        lineWidthUnits: "pixels" as const,
+        getPointRadius: 5,
+        pointRadiusUnits: "pixels" as const,
+        pointType: "circle",
+        onClick: (info: any) => {
+          if (info.index >= 0) {
+            const globalId = info.object?.__globalId;
+            if (globalId !== undefined) {
+              dispatch({ type: "SELECT_FEATURE", index: globalId });
+            }
+          }
+        },
+      }),
+    [],
+  );
+
+  /** Create the deck.gl overlay (once). For data updates, use updateBinaryData. */
   const initDeckOverlayBinary = useCallback(
     (map: maplibregl.Map, binary: BinaryFeatureCollection) => {
       if (overlayRef.current) {
@@ -204,48 +256,60 @@ export default function GeoViewer({ locale }: { locale: Locale }) {
       }
 
       const overlay = new MapboxOverlay({
-        layers: [
-          new GeoJsonLayer({
-            id: "geo-viewer-layer",
-            data: binary as any,
-            filled: true,
-            stroked: true,
-            pickable: true,
-            autoHighlight: true,
-            highlightColor: HIGHLIGHT_COLOR,
-            getFillColor: FILL_COLOR,
-            getLineColor: LINE_COLOR,
-            getLineWidth: 1.5,
-            lineWidthUnits: "pixels" as const,
-            getPointRadius: 5,
-            pointRadiusUnits: "pixels" as const,
-            pointType: "circle",
-            onHover: (info: any) => {
-              const el = tooltipRef.current;
-              if (!el) return;
-              if (info.object) {
-                const props = info.object.properties || info.object;
-                const idx = info.index ?? 0;
-                el.textContent = getFeatureName(props, idx);
-                el.style.display = "block";
-              } else {
-                el.style.display = "none";
-              }
-            },
-            onClick: (info: any) => {
-              if (info.object) {
-                // In binary mode, use globalFeatureIds to get the original feature index
-                const globalId = info.object.properties?.__source?.object?.globalFeatureIds?.value?.[0]
-                  ?? info.index ?? 0;
-                dispatch({ type: "SELECT_FEATURE", index: globalId });
-              }
-            },
-          }),
-        ],
+        layers: [makeBinaryLayer(binary)],
       });
 
       map.addControl(overlay as any);
       overlayRef.current = overlay;
+    },
+    [makeBinaryLayer],
+  );
+
+  /** Update existing overlay's data without tearing it down. */
+  const updateBinaryData = useCallback(
+    (binary: BinaryFeatureCollection) => {
+      if (overlayRef.current) {
+        overlayRef.current.setProps({
+          layers: [makeBinaryLayer(binary)],
+        });
+      }
+    },
+    [makeBinaryLayer],
+  );
+
+  // ── Request viewport-filtered binary from worker ──────────
+  // Sends current map bounds (with small padding) to the worker.
+  // The worker runs WASM spatial query and returns filtered arrays.
+  // LOD: computes min_extent from viewport span — small features hidden when zoomed out.
+  const requestViewportBinary = useCallback(
+    () => {
+      const map = mapRef.current;
+      const worker = workerRef.current;
+      if (!map || !worker || !isBinaryRef.current) return;
+
+      const bounds = map.getBounds();
+      const currentBounds: [number, number, number, number] = [
+        bounds.getWest(),
+        bounds.getSouth(),
+        bounds.getEast(),
+        bounds.getNorth(),
+      ];
+
+      // Small padding so features at the edge aren't clipped during the next pan
+      const padded = padBounds(currentBounds, 0.1);
+
+      // LOD: features must be at least 0.2% of viewport span to be rendered.
+      // This hides tiny features (buildings) when zoomed out to country/continent level.
+      const spanLng = currentBounds[2] - currentBounds[0];
+      const spanLat = currentBounds[3] - currentBounds[1];
+      const viewportSpan = Math.max(spanLng, spanLat);
+      const minExtent = viewportSpan * 0.002;
+
+      worker.postMessage({
+        type: "viewport_update",
+        bounds: padded,
+        minExtent,
+      });
     },
     [],
   );
@@ -256,8 +320,12 @@ export default function GeoViewer({ locale }: { locale: Locale }) {
     if (!map) return;
 
     const onStyleLoad = () => {
-      if (isBinaryRef.current && binaryRef.current) {
-        initDeckOverlayBinary(map, binaryRef.current);
+      if (isBinaryRef.current) {
+        // Re-request viewport binary (overlay will be created on response)
+        if (binaryRef.current) {
+          initDeckOverlayBinary(map, binaryRef.current);
+        }
+        requestViewportBinary();
       } else if (geojsonRef.current) {
         initDeckOverlay(map, geojsonRef.current);
       }
@@ -267,7 +335,34 @@ export default function GeoViewer({ locale }: { locale: Locale }) {
     return () => {
       map.off("style.load", onStyleLoad);
     };
-  }, [ready, initDeckOverlay, initDeckOverlayBinary]);
+  }, [ready, initDeckOverlay, initDeckOverlayBinary, requestViewportBinary]);
+
+  // ── Viewport-based rendering: debounced moveend ────────────
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+
+    const onMoveEnd = () => {
+      if (!isBinaryRef.current) return;
+
+      // Debounce: clear previous timer, set a new one
+      if (viewportTimerRef.current) {
+        clearTimeout(viewportTimerRef.current);
+      }
+      viewportTimerRef.current = setTimeout(() => {
+        requestViewportBinary();
+      }, 80);
+    };
+
+    map.on("moveend", onMoveEnd);
+    return () => {
+      map.off("moveend", onMoveEnd);
+      if (viewportTimerRef.current) {
+        clearTimeout(viewportTimerRef.current);
+      }
+    };
+  }, [ready, requestViewportBinary]);
 
   // ── Lazy property loading for binary mode ─────────────────
 
@@ -377,24 +472,22 @@ export default function GeoViewer({ locale }: { locale: Locale }) {
             percent: msg.percent,
             label: msg.label,
           });
-        } else if (msg.type === "binary_result") {
-          // WASM binary path — typed arrays transferred zero-copy
-          binaryRef.current = msg.binary;
+        } else if (msg.type === "parse_complete") {
+          // WASM parse done — data stays in WASM memory.
+          // We'll request viewport-filtered binary after fitBounds.
           isBinaryRef.current = true;
           bboxRef.current = msg.stats.bbox;
           geojsonRef.current = null;
 
           dispatch({
             type: "LOAD_PROGRESS",
-            percent: 97,
+            percent: 95,
             label: "Rendering...",
           });
 
           if (!map.isStyleLoaded()) {
             await new Promise<void>((r) => map.once("style.load", r));
           }
-
-          initDeckOverlayBinary(map, msg.binary);
 
           if (msg.stats.bbox) {
             map.fitBounds(msg.stats.bbox, {
@@ -411,7 +504,35 @@ export default function GeoViewer({ locale }: { locale: Locale }) {
             geometryTypes: msg.stats.geometryTypes,
           });
 
-          // Worker stays alive for property lookups
+          // Initial viewport: request data bbox with LOD filtering so we
+          // show something immediately. DON'T cache bounds — the moveend after
+          // fitBounds will re-request with actual viewport + proper LOD.
+          if (msg.stats.bbox) {
+            const bbox = msg.stats.bbox;
+            const span = Math.max(bbox[2] - bbox[0], bbox[3] - bbox[1]);
+            worker.postMessage({
+              type: "viewport_update",
+              bounds: padBounds(bbox, 0.1),
+              minExtent: span * 0.002,
+            });
+          }
+
+          // Worker stays alive for viewport updates + property lookups
+        } else if (msg.type === "viewport_binary") {
+          // Viewport-filtered binary from WASM spatial index
+          binaryRef.current = msg.binary;
+
+          if (!map.isStyleLoaded()) {
+            await new Promise<void>((r) => map.once("style.load", r));
+          }
+
+          // First time: create overlay. Subsequent: update data in-place (no teardown).
+          if (overlayRef.current) {
+            updateBinaryData(msg.binary);
+          } else {
+            initDeckOverlayBinary(map, msg.binary);
+          }
+          dispatch({ type: "VIEWPORT_UPDATE", visibleCount: msg.visibleCount });
         } else if (msg.type === "batch") {
           // JS path (KML/Shapefile)
           for (const f of msg.features) accumulated.push(f);
@@ -484,7 +605,7 @@ export default function GeoViewer({ locale }: { locale: Locale }) {
 
       worker.postMessage({ type: "parse", file });
     },
-    [ready, locale, initDeckOverlay, initDeckOverlayBinary],
+    [ready, locale, initDeckOverlay, initDeckOverlayBinary, updateBinaryData],
   );
 
   // Cleanup worker on unmount
@@ -506,6 +627,10 @@ export default function GeoViewer({ locale }: { locale: Locale }) {
     binaryRef.current = null;
     isBinaryRef.current = false;
     bboxRef.current = null;
+    if (viewportTimerRef.current) {
+      clearTimeout(viewportTimerRef.current);
+      viewportTimerRef.current = null;
+    }
     if (tooltipRef.current) tooltipRef.current.style.display = "none";
     dispatch({ type: "RESET" });
   }, []);
@@ -609,7 +734,10 @@ export default function GeoViewer({ locale }: { locale: Locale }) {
                 </span>
                 <span className="text-[10px] text-muted-foreground/60">|</span>
                 <span className="text-[10px] text-muted-foreground">
-                  {state.featureCount.toLocaleString()} {t(locale, "geoViewer.features")}
+                  {state.visibleFeatureCount !== null
+                    ? `${state.visibleFeatureCount.toLocaleString()} / ${state.featureCount.toLocaleString()}`
+                    : state.featureCount.toLocaleString()}{" "}
+                  {t(locale, "geoViewer.features")}
                 </span>
                 <span className="text-[10px] text-muted-foreground/60">|</span>
                 <span className="text-[10px] text-muted-foreground">

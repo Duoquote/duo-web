@@ -4,22 +4,31 @@
 
 import init, { GeoParser } from "../../../wasm/geo-parser/pkg/geo_parser";
 import {
-  extractBinaryCollection,
+  extractViewportBinary,
   getTransferables,
 } from "./wasm-shim";
 import type { BinaryFeatureCollection, ParseStats } from "./wasm-shim";
 
 export type WorkerInput =
   | { type: "parse"; file: File }
-  | { type: "get_properties"; featureIndex: number };
+  | { type: "get_properties"; featureIndex: number }
+  | {
+      type: "viewport_update";
+      bounds: [number, number, number, number];
+      minExtent?: number;
+    };
 
 export type WorkerOutput =
   | { type: "progress"; percent: number; label?: string }
   | { type: "batch"; features: GeoJSON.Feature[] }
   | {
-      type: "binary_result";
-      binary: BinaryFeatureCollection;
+      type: "parse_complete";
       stats: ParseStats;
+    }
+  | {
+      type: "viewport_binary";
+      binary: BinaryFeatureCollection;
+      visibleCount: number;
     }
   | {
       type: "result";
@@ -41,10 +50,12 @@ function post(msg: WorkerOutput, transfer?: Transferable[]) {
 
 const BATCH_SIZE = 10_000;
 
-// ── WASM parser instance (kept alive for property lookups) ────
+// ── WASM parser instance (kept alive for viewport queries + property lookups) ────
 
 let wasmParser: GeoParser | null = null;
 let wasmReady: Promise<void> | null = null;
+/** File reference kept for on-demand property re-reading via File.slice() */
+let currentFile: File | null = null;
 
 async function ensureWasm(): Promise<void> {
   if (!wasmReady) {
@@ -167,6 +178,14 @@ function normalizeGeoJSON(data: any): GeoJSON.FeatureCollection {
 function detectFormat(name: string) {
   const n = name.toLowerCase();
   if (n.endsWith(".geojson") || n.endsWith(".json")) return "geojson";
+  if (
+    n.endsWith(".geojsonl") ||
+    n.endsWith(".geojsons") ||
+    n.endsWith(".geojson-seq") ||
+    n.endsWith(".ndjson") ||
+    n.endsWith(".jsonl")
+  )
+    return "geojsonl";
   if (n.endsWith(".kml")) return "kml";
   if (n.endsWith(".zip")) return "shapefile";
   return null;
@@ -174,12 +193,15 @@ function detectFormat(name: string) {
 
 // ── WASM GeoJSON parser (streaming) ──────────────────────────
 
-async function wasmParseGeoJSON(file: File) {
+async function wasmParseGeoJSON(file: File, lineDelimited = false) {
   await ensureWasm();
 
   // Free any previous parser
   wasmParser?.free();
-  wasmParser = new GeoParser();
+  wasmParser = lineDelimited
+    ? GeoParser.new_line_delimited()
+    : new GeoParser();
+  currentFile = file;
 
   const stream = file.stream() as ReadableStream<Uint8Array>;
   const reader = stream.getReader();
@@ -208,14 +230,24 @@ async function wasmParseGeoJSON(file: File) {
   post({ type: "progress", percent: 88, label: "Finalizing..." });
   wasmParser.finalize();
 
-  post({ type: "progress", percent: 92, label: "Building arrays..." });
-  const { binary, stats } = extractBinaryCollection(wasmParser);
+  post({ type: "progress", percent: 92, label: "Building spatial index..." });
 
-  const transferables = getTransferables(binary);
-  post(
-    { type: "binary_result", binary, stats },
-    transferables as Transferable[],
-  );
+  const bboxArr = wasmParser.bbox();
+  const bbox: [number, number, number, number] | null =
+    bboxArr[0] === Infinity
+      ? null
+      : [bboxArr[0], bboxArr[1], bboxArr[2], bboxArr[3]];
+
+  const stats: ParseStats = {
+    featureCount: wasmParser.feature_count(),
+    vertexCount: wasmParser.vertex_count(),
+    geometryTypes: wasmParser.geometry_types(),
+    bbox,
+  };
+
+  // Send stats only — binary data stays in WASM memory.
+  // The main thread will request viewport-filtered binary via viewport_update.
+  post({ type: "parse_complete", stats });
 }
 
 // ── Parse dispatch ───────────────────────────────────────────
@@ -228,9 +260,12 @@ async function parseFile(file: File) {
 
   switch (format) {
     case "geojson": {
-      // Always use WASM for GeoJSON
-      await wasmParseGeoJSON(file);
-      return; // binary_result sent, no emitResult needed
+      await wasmParseGeoJSON(file, false);
+      return;
+    }
+    case "geojsonl": {
+      await wasmParseGeoJSON(file, true);
+      return;
     }
     case "kml": {
       resetStats();
@@ -276,14 +311,50 @@ self.onmessage = async (e: MessageEvent<WorkerInput>) => {
     } catch (err: any) {
       post({ type: "error", message: err.message || "Failed to parse file" });
     }
-  } else if (msg.type === "get_properties") {
+  } else if (msg.type === "viewport_update") {
     if (wasmParser) {
-      const props = wasmParser.get_properties(msg.featureIndex);
-      post({
-        type: "properties",
-        index: msg.featureIndex,
-        props: props as Record<string, unknown> | null,
-      });
+      const [minLng, minLat, maxLng, maxLat] = msg.bounds;
+      const { binary, visibleCount } = extractViewportBinary(
+        wasmParser,
+        minLng,
+        minLat,
+        maxLng,
+        maxLat,
+        msg.minExtent ?? 0,
+      );
+      const transferables = getTransferables(binary);
+      post(
+        { type: "viewport_binary", binary, visibleCount },
+        transferables as Transferable[],
+      );
+    }
+  } else if (msg.type === "get_properties") {
+    if (wasmParser && currentFile) {
+      try {
+        const offsetArr = wasmParser.get_feature_offset(msg.featureIndex);
+        const fileOffset = offsetArr[0];
+        const byteLength = offsetArr[1];
+
+        if (byteLength > 0) {
+          // Re-read the feature JSON from the original file
+          const blob = currentFile.slice(fileOffset, fileOffset + byteLength);
+          const text = await blob.text();
+          const feature = JSON.parse(text);
+          const props =
+            feature.properties && typeof feature.properties === "object"
+              ? feature.properties
+              : {};
+          post({
+            type: "properties",
+            index: msg.featureIndex,
+            props,
+          });
+        } else {
+          post({ type: "properties", index: msg.featureIndex, props: null });
+        }
+      } catch {
+        post({ type: "properties", index: msg.featureIndex, props: null });
+      }
     } else {
       post({ type: "properties", index: msg.featureIndex, props: null });
     }

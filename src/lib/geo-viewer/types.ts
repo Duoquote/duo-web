@@ -1,4 +1,4 @@
-export type GeoFormat = "geojson" | "kml" | "shapefile";
+export type GeoFormat = "geojson" | "geojsonl" | "kml" | "shapefile";
 
 export type ViewerStatus = "idle" | "loading" | "ready" | "error";
 
@@ -17,6 +17,8 @@ export interface ViewerState {
   selectedFeatureProps: Record<string, unknown> | null;
   /** Whether properties are being loaded from the worker */
   propsLoading: boolean;
+  /** Number of features visible in current viewport (binary mode) */
+  visibleFeatureCount: number | null;
 }
 
 export type ViewerAction =
@@ -32,6 +34,7 @@ export type ViewerAction =
   | { type: "SELECT_FEATURE"; index: number | null }
   | { type: "PROPS_LOADING" }
   | { type: "PROPS_LOADED"; props: Record<string, unknown> | null }
+  | { type: "VIEWPORT_UPDATE"; visibleCount: number }
   | { type: "TOGGLE_SIDEBAR" }
   | { type: "RESET" };
 
@@ -48,6 +51,7 @@ export const initialState: ViewerState = {
   sidebarOpen: true,
   selectedFeatureProps: null,
   propsLoading: false,
+  visibleFeatureCount: null,
 };
 
 export function viewerReducer(
@@ -94,6 +98,8 @@ export function viewerReducer(
         selectedFeatureProps: action.props,
         propsLoading: false,
       };
+    case "VIEWPORT_UPDATE":
+      return { ...state, visibleFeatureCount: action.visibleCount };
     case "TOGGLE_SIDEBAR":
       return { ...state, sidebarOpen: !state.sidebarOpen };
     case "RESET":

@@ -2,68 +2,55 @@
 /* eslint-disable */
 
 /**
- * Main WASM API. Create with `new()`, push chunks, finalize, then read typed arrays.
+ * Main WASM API. Create with `new()`, push chunks, finalize, then use
+ * viewport-based rendering. Properties are loaded lazily via File.slice()
+ * using the file offsets stored per feature.
  */
 export class GeoParser {
     free(): void;
     [Symbol.dispose](): void;
     bbox(): Float64Array;
+    /**
+     * Build viewport-filtered binary arrays. Returns visible feature count.
+     * `min_extent`: LOD threshold in degrees — non-point features smaller than this are skipped.
+     */
+    build_viewport(min_lng: number, min_lat: number, max_lng: number, max_lat: number, min_extent: number): number;
     feature_count(): number;
     /**
-     * Call after all chunks. Adds sentinel values to index arrays and finalizes properties.
+     * Call after all chunks. Adds sentinel values to index arrays.
      */
     finalize(): number;
     geometry_types(): string;
     /**
-     * Get properties for a specific feature by global index (for lazy sidebar loading).
+     * Get the file byte offset and length of a feature's JSON bytes.
+     * Returns a Float64Array [offset, length] (f64 to safely represent u64 up to 2^53).
+     * The worker uses this with File.slice(offset, offset+length) to re-read properties.
      */
-    get_properties(feature_index: number): any;
-    line_feature_ids(): Uint32Array;
-    line_global_feature_ids(): Uint32Array;
-    line_path_indices(): Uint32Array;
-    line_positions(): Float64Array;
-    /**
-     * Get per-feature property objects for lines.
-     */
-    line_properties(): Array<any>;
+    get_feature_offset(feature_index: number): Float64Array;
     constructor();
     /**
-     * Get numeric property column for lines.
+     * Create a parser in line-delimited mode (.geojsonl / .ndjson / .jsonl).
+     * Each top-level `{...}` object is treated as a standalone Feature.
      */
-    numeric_prop_lines(name: string): Float64Array;
-    /**
-     * Get names of numeric properties (sorted).
-     */
-    numeric_prop_names(): Array<any>;
-    /**
-     * Get numeric property column for points.
-     */
-    numeric_prop_points(name: string): Float64Array;
-    /**
-     * Get numeric property column for polygons.
-     */
-    numeric_prop_polygons(name: string): Float64Array;
-    point_feature_ids(): Uint32Array;
-    point_global_feature_ids(): Uint32Array;
-    point_positions(): Float64Array;
-    /**
-     * Get per-feature property objects for points (JSON strings parsed to JS objects).
-     */
-    point_properties(): Array<any>;
-    polygon_feature_ids(): Uint32Array;
-    polygon_global_feature_ids(): Uint32Array;
-    polygon_indices(): Uint32Array;
-    polygon_positions(): Float64Array;
-    /**
-     * Get per-feature property objects for polygons.
-     */
-    polygon_properties(): Array<any>;
-    primitive_polygon_indices(): Uint32Array;
+    static new_line_delimited(): GeoParser;
     /**
      * Push a file chunk (Uint8Array from ReadableStream). Returns features parsed in this chunk.
      */
     push_chunk(chunk: Uint8Array): number;
     vertex_count(): number;
+    vp_feature_count(): number;
+    vp_line_feature_ids(): Uint32Array;
+    vp_line_global_feature_ids(): Uint32Array;
+    vp_line_path_indices(): Uint32Array;
+    vp_line_positions(): Float64Array;
+    vp_point_feature_ids(): Uint32Array;
+    vp_point_global_feature_ids(): Uint32Array;
+    vp_point_positions(): Float64Array;
+    vp_polygon_feature_ids(): Uint32Array;
+    vp_polygon_global_feature_ids(): Uint32Array;
+    vp_polygon_indices(): Uint32Array;
+    vp_polygon_positions(): Float64Array;
+    vp_primitive_polygon_indices(): Uint32Array;
 }
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
@@ -72,36 +59,31 @@ export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly __wbg_geoparser_free: (a: number, b: number) => void;
     readonly geoparser_bbox: (a: number) => number;
+    readonly geoparser_build_viewport: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly geoparser_feature_count: (a: number) => number;
     readonly geoparser_finalize: (a: number) => number;
     readonly geoparser_geometry_types: (a: number, b: number) => void;
-    readonly geoparser_get_properties: (a: number, b: number) => number;
-    readonly geoparser_line_feature_ids: (a: number) => number;
-    readonly geoparser_line_global_feature_ids: (a: number) => number;
-    readonly geoparser_line_path_indices: (a: number) => number;
-    readonly geoparser_line_positions: (a: number) => number;
-    readonly geoparser_line_properties: (a: number) => number;
+    readonly geoparser_get_feature_offset: (a: number, b: number) => number;
     readonly geoparser_new: () => number;
-    readonly geoparser_numeric_prop_lines: (a: number, b: number, c: number) => number;
-    readonly geoparser_numeric_prop_names: (a: number) => number;
-    readonly geoparser_numeric_prop_points: (a: number, b: number, c: number) => number;
-    readonly geoparser_numeric_prop_polygons: (a: number, b: number, c: number) => number;
-    readonly geoparser_point_feature_ids: (a: number) => number;
-    readonly geoparser_point_global_feature_ids: (a: number) => number;
-    readonly geoparser_point_positions: (a: number) => number;
-    readonly geoparser_point_properties: (a: number) => number;
-    readonly geoparser_polygon_feature_ids: (a: number) => number;
-    readonly geoparser_polygon_global_feature_ids: (a: number) => number;
-    readonly geoparser_polygon_indices: (a: number) => number;
-    readonly geoparser_polygon_positions: (a: number) => number;
-    readonly geoparser_polygon_properties: (a: number) => number;
-    readonly geoparser_primitive_polygon_indices: (a: number) => number;
+    readonly geoparser_new_line_delimited: () => number;
     readonly geoparser_push_chunk: (a: number, b: number, c: number) => number;
     readonly geoparser_vertex_count: (a: number) => number;
+    readonly geoparser_vp_feature_count: (a: number) => number;
+    readonly geoparser_vp_line_feature_ids: (a: number) => number;
+    readonly geoparser_vp_line_global_feature_ids: (a: number) => number;
+    readonly geoparser_vp_line_path_indices: (a: number) => number;
+    readonly geoparser_vp_line_positions: (a: number) => number;
+    readonly geoparser_vp_point_feature_ids: (a: number) => number;
+    readonly geoparser_vp_point_global_feature_ids: (a: number) => number;
+    readonly geoparser_vp_point_positions: (a: number) => number;
+    readonly geoparser_vp_polygon_feature_ids: (a: number) => number;
+    readonly geoparser_vp_polygon_global_feature_ids: (a: number) => number;
+    readonly geoparser_vp_polygon_indices: (a: number) => number;
+    readonly geoparser_vp_polygon_positions: (a: number) => number;
+    readonly geoparser_vp_primitive_polygon_indices: (a: number) => number;
     readonly __wbindgen_export: (a: number, b: number, c: number) => void;
-    readonly __wbindgen_export2: (a: number) => void;
-    readonly __wbindgen_export3: (a: number, b: number) => number;
-    readonly __wbindgen_export4: (a: number, b: number, c: number, d: number) => number;
+    readonly __wbindgen_export2: (a: number, b: number) => number;
+    readonly __wbindgen_export3: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
 }
 

@@ -1,9 +1,18 @@
 /* @ts-self-types="./geo_parser.d.ts" */
 
 /**
- * Main WASM API. Create with `new()`, push chunks, finalize, then read typed arrays.
+ * Main WASM API. Create with `new()`, push chunks, finalize, then use
+ * viewport-based rendering. Properties are loaded lazily via File.slice()
+ * using the file offsets stored per feature.
  */
 export class GeoParser {
+    static __wrap(ptr) {
+        ptr = ptr >>> 0;
+        const obj = Object.create(GeoParser.prototype);
+        obj.__wbg_ptr = ptr;
+        GeoParserFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
     __destroy_into_raw() {
         const ptr = this.__wbg_ptr;
         this.__wbg_ptr = 0;
@@ -22,6 +31,20 @@ export class GeoParser {
         return takeObject(ret);
     }
     /**
+     * Build viewport-filtered binary arrays. Returns visible feature count.
+     * `min_extent`: LOD threshold in degrees — non-point features smaller than this are skipped.
+     * @param {number} min_lng
+     * @param {number} min_lat
+     * @param {number} max_lng
+     * @param {number} max_lat
+     * @param {number} min_extent
+     * @returns {number}
+     */
+    build_viewport(min_lng, min_lat, max_lng, max_lat, min_extent) {
+        const ret = wasm.geoparser_build_viewport(this.__wbg_ptr, min_lng, min_lat, max_lng, max_lat, min_extent);
+        return ret >>> 0;
+    }
+    /**
      * @returns {number}
      */
     feature_count() {
@@ -29,7 +52,7 @@ export class GeoParser {
         return ret >>> 0;
     }
     /**
-     * Call after all chunks. Adds sentinel values to index arrays and finalizes properties.
+     * Call after all chunks. Adds sentinel values to index arrays.
      * @returns {number}
      */
     finalize() {
@@ -56,48 +79,14 @@ export class GeoParser {
         }
     }
     /**
-     * Get properties for a specific feature by global index (for lazy sidebar loading).
+     * Get the file byte offset and length of a feature's JSON bytes.
+     * Returns a Float64Array [offset, length] (f64 to safely represent u64 up to 2^53).
+     * The worker uses this with File.slice(offset, offset+length) to re-read properties.
      * @param {number} feature_index
-     * @returns {any}
-     */
-    get_properties(feature_index) {
-        const ret = wasm.geoparser_get_properties(this.__wbg_ptr, feature_index);
-        return takeObject(ret);
-    }
-    /**
-     * @returns {Uint32Array}
-     */
-    line_feature_ids() {
-        const ret = wasm.geoparser_line_feature_ids(this.__wbg_ptr);
-        return takeObject(ret);
-    }
-    /**
-     * @returns {Uint32Array}
-     */
-    line_global_feature_ids() {
-        const ret = wasm.geoparser_line_global_feature_ids(this.__wbg_ptr);
-        return takeObject(ret);
-    }
-    /**
-     * @returns {Uint32Array}
-     */
-    line_path_indices() {
-        const ret = wasm.geoparser_line_path_indices(this.__wbg_ptr);
-        return takeObject(ret);
-    }
-    /**
      * @returns {Float64Array}
      */
-    line_positions() {
-        const ret = wasm.geoparser_line_positions(this.__wbg_ptr);
-        return takeObject(ret);
-    }
-    /**
-     * Get per-feature property objects for lines.
-     * @returns {Array<any>}
-     */
-    line_properties() {
-        const ret = wasm.geoparser_line_properties(this.__wbg_ptr);
+    get_feature_offset(feature_index) {
+        const ret = wasm.geoparser_get_feature_offset(this.__wbg_ptr, feature_index);
         return takeObject(ret);
     }
     constructor() {
@@ -107,117 +96,13 @@ export class GeoParser {
         return this;
     }
     /**
-     * Get numeric property column for lines.
-     * @param {string} name
-     * @returns {Float64Array}
+     * Create a parser in line-delimited mode (.geojsonl / .ndjson / .jsonl).
+     * Each top-level `{...}` object is treated as a standalone Feature.
+     * @returns {GeoParser}
      */
-    numeric_prop_lines(name) {
-        const ptr0 = passStringToWasm0(name, wasm.__wbindgen_export3, wasm.__wbindgen_export4);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.geoparser_numeric_prop_lines(this.__wbg_ptr, ptr0, len0);
-        return takeObject(ret);
-    }
-    /**
-     * Get names of numeric properties (sorted).
-     * @returns {Array<any>}
-     */
-    numeric_prop_names() {
-        const ret = wasm.geoparser_numeric_prop_names(this.__wbg_ptr);
-        return takeObject(ret);
-    }
-    /**
-     * Get numeric property column for points.
-     * @param {string} name
-     * @returns {Float64Array}
-     */
-    numeric_prop_points(name) {
-        const ptr0 = passStringToWasm0(name, wasm.__wbindgen_export3, wasm.__wbindgen_export4);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.geoparser_numeric_prop_points(this.__wbg_ptr, ptr0, len0);
-        return takeObject(ret);
-    }
-    /**
-     * Get numeric property column for polygons.
-     * @param {string} name
-     * @returns {Float64Array}
-     */
-    numeric_prop_polygons(name) {
-        const ptr0 = passStringToWasm0(name, wasm.__wbindgen_export3, wasm.__wbindgen_export4);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.geoparser_numeric_prop_polygons(this.__wbg_ptr, ptr0, len0);
-        return takeObject(ret);
-    }
-    /**
-     * @returns {Uint32Array}
-     */
-    point_feature_ids() {
-        const ret = wasm.geoparser_point_feature_ids(this.__wbg_ptr);
-        return takeObject(ret);
-    }
-    /**
-     * @returns {Uint32Array}
-     */
-    point_global_feature_ids() {
-        const ret = wasm.geoparser_point_global_feature_ids(this.__wbg_ptr);
-        return takeObject(ret);
-    }
-    /**
-     * @returns {Float64Array}
-     */
-    point_positions() {
-        const ret = wasm.geoparser_point_positions(this.__wbg_ptr);
-        return takeObject(ret);
-    }
-    /**
-     * Get per-feature property objects for points (JSON strings parsed to JS objects).
-     * @returns {Array<any>}
-     */
-    point_properties() {
-        const ret = wasm.geoparser_point_properties(this.__wbg_ptr);
-        return takeObject(ret);
-    }
-    /**
-     * @returns {Uint32Array}
-     */
-    polygon_feature_ids() {
-        const ret = wasm.geoparser_polygon_feature_ids(this.__wbg_ptr);
-        return takeObject(ret);
-    }
-    /**
-     * @returns {Uint32Array}
-     */
-    polygon_global_feature_ids() {
-        const ret = wasm.geoparser_polygon_global_feature_ids(this.__wbg_ptr);
-        return takeObject(ret);
-    }
-    /**
-     * @returns {Uint32Array}
-     */
-    polygon_indices() {
-        const ret = wasm.geoparser_polygon_indices(this.__wbg_ptr);
-        return takeObject(ret);
-    }
-    /**
-     * @returns {Float64Array}
-     */
-    polygon_positions() {
-        const ret = wasm.geoparser_polygon_positions(this.__wbg_ptr);
-        return takeObject(ret);
-    }
-    /**
-     * Get per-feature property objects for polygons.
-     * @returns {Array<any>}
-     */
-    polygon_properties() {
-        const ret = wasm.geoparser_polygon_properties(this.__wbg_ptr);
-        return takeObject(ret);
-    }
-    /**
-     * @returns {Uint32Array}
-     */
-    primitive_polygon_indices() {
-        const ret = wasm.geoparser_primitive_polygon_indices(this.__wbg_ptr);
-        return takeObject(ret);
+    static new_line_delimited() {
+        const ret = wasm.geoparser_new_line_delimited();
+        return GeoParser.__wrap(ret);
     }
     /**
      * Push a file chunk (Uint8Array from ReadableStream). Returns features parsed in this chunk.
@@ -225,7 +110,7 @@ export class GeoParser {
      * @returns {number}
      */
     push_chunk(chunk) {
-        const ptr0 = passArray8ToWasm0(chunk, wasm.__wbindgen_export3);
+        const ptr0 = passArray8ToWasm0(chunk, wasm.__wbindgen_export2);
         const len0 = WASM_VECTOR_LEN;
         const ret = wasm.geoparser_push_chunk(this.__wbg_ptr, ptr0, len0);
         return ret >>> 0;
@@ -236,6 +121,97 @@ export class GeoParser {
     vertex_count() {
         const ret = wasm.geoparser_vertex_count(this.__wbg_ptr);
         return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    vp_feature_count() {
+        const ret = wasm.geoparser_vp_feature_count(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {Uint32Array}
+     */
+    vp_line_feature_ids() {
+        const ret = wasm.geoparser_vp_line_feature_ids(this.__wbg_ptr);
+        return takeObject(ret);
+    }
+    /**
+     * @returns {Uint32Array}
+     */
+    vp_line_global_feature_ids() {
+        const ret = wasm.geoparser_vp_line_global_feature_ids(this.__wbg_ptr);
+        return takeObject(ret);
+    }
+    /**
+     * @returns {Uint32Array}
+     */
+    vp_line_path_indices() {
+        const ret = wasm.geoparser_vp_line_path_indices(this.__wbg_ptr);
+        return takeObject(ret);
+    }
+    /**
+     * @returns {Float64Array}
+     */
+    vp_line_positions() {
+        const ret = wasm.geoparser_vp_line_positions(this.__wbg_ptr);
+        return takeObject(ret);
+    }
+    /**
+     * @returns {Uint32Array}
+     */
+    vp_point_feature_ids() {
+        const ret = wasm.geoparser_vp_point_feature_ids(this.__wbg_ptr);
+        return takeObject(ret);
+    }
+    /**
+     * @returns {Uint32Array}
+     */
+    vp_point_global_feature_ids() {
+        const ret = wasm.geoparser_vp_point_global_feature_ids(this.__wbg_ptr);
+        return takeObject(ret);
+    }
+    /**
+     * @returns {Float64Array}
+     */
+    vp_point_positions() {
+        const ret = wasm.geoparser_vp_point_positions(this.__wbg_ptr);
+        return takeObject(ret);
+    }
+    /**
+     * @returns {Uint32Array}
+     */
+    vp_polygon_feature_ids() {
+        const ret = wasm.geoparser_vp_polygon_feature_ids(this.__wbg_ptr);
+        return takeObject(ret);
+    }
+    /**
+     * @returns {Uint32Array}
+     */
+    vp_polygon_global_feature_ids() {
+        const ret = wasm.geoparser_vp_polygon_global_feature_ids(this.__wbg_ptr);
+        return takeObject(ret);
+    }
+    /**
+     * @returns {Uint32Array}
+     */
+    vp_polygon_indices() {
+        const ret = wasm.geoparser_vp_polygon_indices(this.__wbg_ptr);
+        return takeObject(ret);
+    }
+    /**
+     * @returns {Float64Array}
+     */
+    vp_polygon_positions() {
+        const ret = wasm.geoparser_vp_polygon_positions(this.__wbg_ptr);
+        return takeObject(ret);
+    }
+    /**
+     * @returns {Uint32Array}
+     */
+    vp_primitive_polygon_indices() {
+        const ret = wasm.geoparser_vp_primitive_polygon_indices(this.__wbg_ptr);
+        return takeObject(ret);
     }
 }
 if (Symbol.dispose) GeoParser.prototype[Symbol.dispose] = GeoParser.prototype.free;
@@ -269,10 +245,6 @@ function __wbg_get_imports() {
             const ret = new Error();
             return addHeapObject(ret);
         },
-        __wbg_new_a70fbab9066b301f: function() {
-            const ret = new Array();
-            return addHeapObject(ret);
-        },
         __wbg_new_with_length_3437fa6f550bd3d8: function(arg0) {
             const ret = new Uint32Array(arg0 >>> 0);
             return addHeapObject(ret);
@@ -281,31 +253,21 @@ function __wbg_get_imports() {
             const ret = new Float64Array(arg0 >>> 0);
             return addHeapObject(ret);
         },
-        __wbg_parse_e9eddd2a82c706eb: function() { return handleError(function (arg0, arg1) {
-            const ret = JSON.parse(getStringFromWasm0(arg0, arg1));
-            return addHeapObject(ret);
-        }, arguments); },
-        __wbg_push_e87b0e732085a946: function(arg0, arg1) {
-            const ret = getObject(arg0).push(getObject(arg1));
-            return ret;
-        },
         __wbg_set_1be21701d704e71d: function(arg0, arg1, arg2) {
             getObject(arg0).set(getArrayU32FromWasm0(arg1, arg2));
         },
         __wbg_set_636d1e3e4286e068: function(arg0, arg1, arg2) {
             getObject(arg0).set(getArrayF64FromWasm0(arg1, arg2));
         },
+        __wbg_set_index_a56629feb5ac0ffa: function(arg0, arg1, arg2) {
+            getObject(arg0)[arg1 >>> 0] = arg2;
+        },
         __wbg_stack_3b0d974bbf31e44f: function(arg0, arg1) {
             const ret = getObject(arg1).stack;
-            const ptr1 = passStringToWasm0(ret, wasm.__wbindgen_export3, wasm.__wbindgen_export4);
+            const ptr1 = passStringToWasm0(ret, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
             const len1 = WASM_VECTOR_LEN;
             getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
             getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
-        },
-        __wbindgen_cast_0000000000000001: function(arg0, arg1) {
-            // Cast intrinsic for `Ref(String) -> Externref`.
-            const ret = getStringFromWasm0(arg0, arg1);
-            return addHeapObject(ret);
         },
         __wbindgen_object_drop_ref: function(arg0) {
             takeObject(arg0);
@@ -384,14 +346,6 @@ function getUint8ArrayMemory0() {
 }
 
 function getObject(idx) { return heap[idx]; }
-
-function handleError(f, args) {
-    try {
-        return f.apply(this, args);
-    } catch (e) {
-        wasm.__wbindgen_export2(addHeapObject(e));
-    }
-}
 
 let heap = new Array(1024).fill(undefined);
 heap.push(undefined, null, true, false);
