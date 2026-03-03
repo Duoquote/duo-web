@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "astro dev",
     "build:wasm": "powershell -File scripts/build-wasm.ps1",
-    "build": "powershell -File scripts/build-wasm.ps1 && astro build",
+    "build": "astro build",
     "preview": "astro preview"
   },
   "devDependencies": {

@@ -1,0 +1,36 @@
+/* tslint:disable */
+/* eslint-disable */
+export const memory: WebAssembly.Memory;
+export const __wbg_geoparser_free: (a: number, b: number) => void;
+export const geoparser_bbox: (a: number) => number;
+export const geoparser_feature_count: (a: number) => number;
+export const geoparser_finalize: (a: number) => number;
+export const geoparser_geometry_types: (a: number, b: number) => void;
+export const geoparser_get_properties: (a: number, b: number) => number;
+export const geoparser_line_feature_ids: (a: number) => number;
+export const geoparser_line_global_feature_ids: (a: number) => number;
+export const geoparser_line_path_indices: (a: number) => number;
+export const geoparser_line_positions: (a: number) => number;
+export const geoparser_line_properties: (a: number) => number;
+export const geoparser_new: () => number;
+export const geoparser_numeric_prop_lines: (a: number, b: number, c: number) => number;
+export const geoparser_numeric_prop_names: (a: number) => number;
+export const geoparser_numeric_prop_points: (a: number, b: number, c: number) => number;
+export const geoparser_numeric_prop_polygons: (a: number, b: number, c: number) => number;
+export const geoparser_point_feature_ids: (a: number) => number;
+export const geoparser_point_global_feature_ids: (a: number) => number;
+export const geoparser_point_positions: (a: number) => number;
+export const geoparser_point_properties: (a: number) => number;
+export const geoparser_polygon_feature_ids: (a: number) => number;
+export const geoparser_polygon_global_feature_ids: (a: number) => number;
+export const geoparser_polygon_indices: (a: number) => number;
+export const geoparser_polygon_positions: (a: number) => number;
+export const geoparser_polygon_properties: (a: number) => number;
+export const geoparser_primitive_polygon_indices: (a: number) => number;
+export const geoparser_push_chunk: (a: number, b: number, c: number) => number;
+export const geoparser_vertex_count: (a: number) => number;
+export const __wbindgen_export: (a: number, b: number, c: number) => void;
+export const __wbindgen_export2: (a: number) => void;
+export const __wbindgen_export3: (a: number, b: number) => number;
+export const __wbindgen_export4: (a: number, b: number, c: number, d: number) => number;
+export const __wbindgen_add_to_stack_pointer: (a: number) => number;
