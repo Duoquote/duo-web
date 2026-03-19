@@ -52,6 +52,11 @@ const translations = {
     "tools.geoViewer.description":
       "View GeoJSON, Shapefile & KML files on a map.",
 
+    // ImVector tool listing
+    "tools.imvector.name": "Image Vectorizer",
+    "tools.imvector.description":
+      "Convert raster images to SVG vectors in your browser.",
+
     // H3 Explorer
     "h3.backToTools": "← Back to tools",
     "h3.heading": "H3 Explorer",
@@ -137,6 +142,39 @@ const translations = {
     "geoViewer.errorNoFeatures": "No features found",
     "geoViewer.errorShpZip": "Shapefiles must be provided as a .zip",
 
+    // ImVector
+    "imvector.backToTools": "\u2190 Back to tools",
+    "imvector.heading": "Image Vectorizer",
+    "imvector.description":
+      "Convert raster images to clean SVG vectors entirely in your browser. AI upscaling, color quantization, and shape detection.",
+    "imvector.dropzone": "Drop an image here or click to browse",
+    "imvector.errorFormat": "Unsupported image format",
+    "imvector.settings": "Settings",
+    "imvector.colors": "Colors",
+    "imvector.denoise": "Denoise",
+    "imvector.detectShapes": "Detect shapes",
+    "imvector.aiUpscale": "AI upscale (4x)",
+    "imvector.aiDenoise": "AI denoise",
+    "imvector.optimize": "SVG optimize",
+    "imvector.optNone": "None",
+    "imvector.optBasic": "Basic",
+    "imvector.optFull": "Full",
+    "imvector.showSrc": "Original",
+    "imvector.showingSrc": "Original",
+    "imvector.download": "Download SVG",
+    "imvector.tryAnother": "New image",
+    "imvector.clearAll": "Clear all",
+    "imvector.reprocess": "Reprocess with current settings",
+    "imvector.queued": "Waiting in queue...",
+    "imvector.type": "Type",
+    "imvector.totalTime": "Total",
+    "imvector.modelPromptTitle": "AI model needs to be downloaded",
+    "imvector.modelPromptDesc":
+      "AI upscaling requires a Real-ESRGAN model (~18 MB). It will be downloaded once and cached in your browser for future use.",
+    "imvector.modelDontShow": "Don't show this again",
+    "imvector.modelAccept": "Download & Continue",
+    "imvector.modelSkip": "Skip AI",
+
     // SEO — Converter
     "seo.converter.title":
       "Video Converter — Convert Video & Audio in Your Browser",
@@ -148,6 +186,12 @@ const translations = {
       "Geo Viewer \u2014 View GeoJSON, Shapefile & KML on a Map",
     "seo.geoViewer.description":
       "Free online tool to visualize GeoJSON, Shapefile, and KML files on an interactive WebGL map. No upload, no server.",
+
+    // SEO — ImVector
+    "seo.imvector.title":
+      "Image Vectorizer \u2014 Convert Images to SVG in Your Browser",
+    "seo.imvector.description":
+      "Free online image vectorizer. Convert PNG, JPEG, WebP to clean SVG with AI upscaling, color quantization, and shape detection. No upload, no server.",
 
     // Links page
     "links.label": "Links",
@@ -238,6 +282,11 @@ const translations = {
     "tools.geoViewer.description":
       "GeoJSON, Shapefile ve KML dosyalarını haritada görüntüleyin.",
 
+    // ImVector tool listing
+    "tools.imvector.name": "Görsel Vektörleştirici",
+    "tools.imvector.description":
+      "Raster görselleri tarayıcınızda SVG vektörlere dönüştürün.",
+
     // H3 Explorer
     "h3.backToTools": "← Araçlara dön",
     "h3.heading": "H3 Gezgini",
@@ -325,6 +374,39 @@ const translations = {
     "geoViewer.errorNoFeatures": "Özellik bulunamadı",
     "geoViewer.errorShpZip": "Shapefile dosyaları .zip olarak sağlanmalıdır",
 
+    // ImVector
+    "imvector.backToTools": "\u2190 Araçlara dön",
+    "imvector.heading": "Görsel Vektörleştirici",
+    "imvector.description":
+      "Raster görselleri tarayıcınızda temiz SVG vektörlere dönüştürün. Yapay zeka ölçeklendirme, renk nicemleme ve şekil algılama.",
+    "imvector.dropzone": "Bir görsel sürükleyin veya tıklayıp seçin",
+    "imvector.errorFormat": "Desteklenmeyen görsel formatı",
+    "imvector.settings": "Ayarlar",
+    "imvector.colors": "Renkler",
+    "imvector.denoise": "Gürültü azaltma",
+    "imvector.detectShapes": "Şekil algılama",
+    "imvector.aiUpscale": "AI ölçeklendirme (4x)",
+    "imvector.aiDenoise": "AI gürültü azaltma",
+    "imvector.optimize": "SVG optimizasyon",
+    "imvector.optNone": "Yok",
+    "imvector.optBasic": "Temel",
+    "imvector.optFull": "Tam",
+    "imvector.showSrc": "Orijinal",
+    "imvector.showingSrc": "Orijinal",
+    "imvector.download": "SVG İndir",
+    "imvector.tryAnother": "Yeni görsel",
+    "imvector.clearAll": "Tümünü temizle",
+    "imvector.reprocess": "Mevcut ayarlarla yeniden işle",
+    "imvector.queued": "Sırada bekliyor...",
+    "imvector.type": "Tür",
+    "imvector.totalTime": "Toplam",
+    "imvector.modelPromptTitle": "AI modeli indirilmesi gerekiyor",
+    "imvector.modelPromptDesc":
+      "AI ölçeklendirme için Real-ESRGAN modeli (~18 MB) gerekiyor. Bir kez indirilecek ve tarayıcınızda önbelleğe alınacaktır.",
+    "imvector.modelDontShow": "Bir daha gösterme",
+    "imvector.modelAccept": "İndir ve Devam Et",
+    "imvector.modelSkip": "AI'yı Atla",
+
     // SEO — Converter
     "seo.converter.title":
       "Video Dönüştürücü — Tarayıcınızda Video ve Ses Dönüştürün",
@@ -336,6 +418,12 @@ const translations = {
       "Geo Görüntüleyici \u2014 GeoJSON, Shapefile ve KML Haritada Görüntüle",
     "seo.geoViewer.description":
       "GeoJSON, Shapefile ve KML dosyalarını interaktif WebGL haritada görselleştirmek için ücretsiz çevrimiçi araç. Yükleme yok, sunucu yok.",
+
+    // SEO — ImVector
+    "seo.imvector.title":
+      "Görsel Vektörleştirici \u2014 Tarayıcınızda Görselleri SVG'ye Dönüştürün",
+    "seo.imvector.description":
+      "Ücretsiz çevrimiçi görsel vektörleştirici. PNG, JPEG, WebP dosyalarını yapay zeka ölçeklendirme, renk nicemleme ve şekil algılama ile temiz SVG'ye dönüştürün. Yükleme yok, sunucu yok.",
 
     // Links page
     "links.label": "Bağlantılar",

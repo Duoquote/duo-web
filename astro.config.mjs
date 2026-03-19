@@ -25,7 +25,7 @@ export default defineConfig({
       target: "es2022",
     },
     optimizeDeps: {
-      exclude: ["@ffmpeg/ffmpeg", "@ffmpeg/util"],
+      exclude: ["@ffmpeg/ffmpeg", "@ffmpeg/util", "onnxruntime-web"],
       include: [
         "maplibre-gl",
         "@deck.gl/core",

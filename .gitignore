@@ -5,3 +5,4 @@ dist/
 .env.*
 !.env.example
 wasm/geo-parser/target/
+wasm/imvector/target/
