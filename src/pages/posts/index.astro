@@ -33,7 +33,7 @@ const posts = (await getCollection("posts"))
 
     <div class="grid gap-4">
       {posts.map((post) => {
-        const { excerptHtml } = splitPost(post.body ?? "");
+        const { summary } = splitPost(post.body ?? "");
         return (
           <a
             href={`/posts/${post.id}`}
@@ -63,7 +63,7 @@ const posts = (await getCollection("posts"))
             <h2 class="mb-2 text-sm font-semibold text-card-foreground">
               {post.data.title}
             </h2>
-            <div class="text-sm text-muted-foreground post-excerpt" set:html={excerptHtml} />
+            <p class="text-sm text-muted-foreground">{summary}</p>
             <div class="mt-4 h-0.5 w-8 bg-primary/30 transition-all group-hover:w-12 group-hover:bg-primary/60" />
           </a>
         );
