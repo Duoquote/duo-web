@@ -119,6 +119,7 @@ The summary is converted to **plain text** before posting to Facebook (markdown 
   ```
 - **Do NOT use code blocks** — they lose formatting on Facebook
 - **Do NOT use images** in the summary — use the `image` frontmatter field for the Facebook photo instead
+- **Do NOT use emojis** — keep the tone professional and clean
 - **Bold/italic/links are fine** — they get stripped to plain text cleanly
 - **Lists and line breaks are fine** — they translate well to Facebook
 - Keep tables, code blocks, and images for the detailed body below `<!-- more -->`

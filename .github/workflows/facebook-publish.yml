@@ -14,12 +14,10 @@ jobs:
         with:
           fetch-depth: 2
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
+      - uses: oven-sh/setup-bun@v2
 
       - name: Install remove-markdown
-        run: npm install remove-markdown
+        run: bun add remove-markdown
 
       - name: Detect and prepare post
         id: detect
@@ -38,8 +36,8 @@ jobs:
           FILE=$(echo "$NEW_FILES" | head -n 1)
           SLUG=$(basename "$FILE" .md)
 
-          # Use Node to extract frontmatter fields and convert summary to plain text
-          node -e "
+          # Use Bun to extract frontmatter fields and convert summary to plain text
+          bun -e "
             const fs = require('fs');
             const removeMd = require('remove-markdown');
 
