@@ -32,10 +32,15 @@ jobs:
           FILE=$(echo "$NEW_FILES" | head -n 1)
           echo "file=$FILE" >> "$GITHUB_OUTPUT"
 
-          # Extract title, description, and image from frontmatter
+          # Extract title, description, image, and summary from frontmatter/body
           TITLE=$(sed -n 's/^title: *"\(.*\)"/\1/p' "$FILE" | head -1)
           DESC=$(sed -n 's/^description: *"\(.*\)"/\1/p' "$FILE" | head -1)
           IMAGE=$(sed -n 's/^image: *"\(.*\)"/\1/p' "$FILE" | head -1)
+
+          # Extract summary: body content before <!-- more -->, stripping frontmatter and markdown syntax
+          SUMMARY=$(awk '/^---$/{if(++c==2){f=1;next}}f{if(/<!-- more -->/){exit}print}' "$FILE" \
+            | sed 's/^#\+ //; s/\*\*//g; s/\*//g; s/`//g; s/\[//g; s/\]//g; s/([^)]*)//g' \
+            | tr '\n' ' ' | sed 's/  */ /g; s/^ //; s/ $//')
 
           # Derive slug from filename (e.g. hello-world.md -> hello-world)
           SLUG=$(basename "$FILE" .md)
@@ -45,6 +50,7 @@ jobs:
           echo "description=$DESC" >> "$GITHUB_OUTPUT"
           echo "url=$POST_URL" >> "$GITHUB_OUTPUT"
           echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+          echo "summary=$SUMMARY" >> "$GITHUB_OUTPUT"
 
       - name: Publish to Facebook Page
         if: steps.detect.outputs.has_new == 'true'
@@ -53,14 +59,18 @@ jobs:
           FB_ACCESS_TOKEN: ${{ secrets.FB_ACCESS_TOKEN }}
         run: |
           TITLE="${{ steps.detect.outputs.title }}"
+          SUMMARY="${{ steps.detect.outputs.summary }}"
           DESC="${{ steps.detect.outputs.description }}"
           URL="${{ steps.detect.outputs.url }}"
 
           IMAGE="${{ steps.detect.outputs.image }}"
 
+          # Use summary (body before <!-- more -->) if available, otherwise fall back to description
+          BODY="${SUMMARY:-$DESC}"
+
           MESSAGE="${TITLE}
 
-          ${DESC}
+          ${BODY}
 
           Read more: ${URL}"
 

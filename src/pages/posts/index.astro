@@ -4,6 +4,7 @@ import Layout from "../../layouts/Layout.astro";
 import GridBackground from "../../components/GridBackground";
 import Header from "../../components/Header";
 import { t } from "../../lib/i18n";
+import { splitPost } from "../../lib/posts";
 
 const locale = "en" as const;
 
@@ -31,39 +32,42 @@ const posts = (await getCollection("posts"))
     </p>
 
     <div class="grid gap-4">
-      {posts.map((post) => (
-        <a
-          href={`/posts/${post.id}`}
-          class="group border border-border bg-card p-5 transition-all hover:border-primary/20 hover:bg-card/80 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
-        >
-          <div class="flex items-center gap-3 mb-2">
-            <time
-              datetime={post.data.date.toISOString()}
-              class="text-xs text-muted-foreground tabular-nums"
-            >
-              {post.data.date.toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </time>
-            {post.data.tags.length > 0 && (
-              <div class="flex gap-1.5">
-                {post.data.tags.map((tag) => (
-                  <span class="text-[10px] font-medium uppercase tracking-wider text-primary/70 bg-primary/5 px-1.5 py-0.5">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-          <h2 class="mb-1.5 text-sm font-semibold text-card-foreground">
-            {post.data.title}
-          </h2>
-          <p class="text-sm text-muted-foreground">{post.data.description}</p>
-          <div class="mt-4 h-0.5 w-8 bg-primary/30 transition-all group-hover:w-12 group-hover:bg-primary/60" />
-        </a>
-      ))}
+      {posts.map((post) => {
+        const { excerptHtml } = splitPost(post.body ?? "");
+        return (
+          <a
+            href={`/posts/${post.id}`}
+            class="group border border-border bg-card p-5 transition-all hover:border-primary/20 hover:bg-card/80 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
+          >
+            <div class="flex items-center gap-3 mb-2">
+              <time
+                datetime={post.data.date.toISOString()}
+                class="text-xs text-muted-foreground tabular-nums"
+              >
+                {post.data.date.toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </time>
+              {post.data.tags.length > 0 && (
+                <div class="flex gap-1.5">
+                  {post.data.tags.map((tag) => (
+                    <span class="text-[10px] font-medium uppercase tracking-wider text-primary/70 bg-primary/5 px-1.5 py-0.5">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+            <h2 class="mb-2 text-sm font-semibold text-card-foreground">
+              {post.data.title}
+            </h2>
+            <div class="text-sm text-muted-foreground post-excerpt" set:html={excerptHtml} />
+            <div class="mt-4 h-0.5 w-8 bg-primary/30 transition-all group-hover:w-12 group-hover:bg-primary/60" />
+          </a>
+        );
+      })}
     </div>
   </main>
 </Layout>

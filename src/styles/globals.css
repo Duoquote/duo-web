@@ -232,6 +232,18 @@
   color: oklch(0.985 0 0);
 }
 
+/* Post excerpt on list pages */
+.post-excerpt p {
+  margin: 0;
+}
+
+/* Post lead section (summary) on detail pages */
+.post-lead {
+  font-size: 1.0625rem;
+  line-height: 1.8;
+  color: var(--foreground);
+}
+
 /* Post content typography */
 .post-content {
   color: var(--foreground);

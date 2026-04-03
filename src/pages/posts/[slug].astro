@@ -1,9 +1,10 @@
 ---
-import { getCollection, render } from "astro:content";
+import { getCollection } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 import GridBackground from "../../components/GridBackground";
 import Header from "../../components/Header";
 import { t } from "../../lib/i18n";
+import { splitPost } from "../../lib/posts";
 
 const locale = "en" as const;
 
@@ -15,7 +16,7 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props;
-const { Content } = await render(post);
+const { excerptHtml, restHtml } = splitPost(post.body ?? "");
 
 const ogImage = post.data.image ?? "/og.jpg";
 const postUrl = new URL(`/posts/${post.id}`, Astro.site).toString();
@@ -74,9 +75,14 @@ const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComp
         )}
       </header>
 
-      <div class="post-content max-w-none">
-        <Content />
-      </div>
+      <div class="post-lead post-content max-w-none" set:html={excerptHtml} />
+
+      {restHtml && (
+        <>
+          <hr class="my-8 border-border" />
+          <div class="post-content max-w-none" set:html={restHtml} />
+        </>
+      )}
 
       <footer class="mt-10 pt-6 border-t border-border">
         <a

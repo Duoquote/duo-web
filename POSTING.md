@@ -69,7 +69,49 @@ image: "/images/posts/my-cover.jpg"
 
 Images must be committed and deployed before the Facebook Action runs, since Facebook fetches the image by URL from `https://dq.ms/images/posts/...`.
 
-## Markdown Body
+## Post Body Structure
+
+Posts use a `<!-- more -->` separator to split content into a **summary** and **detailed body**.
+
+```markdown
+---
+title: "My Post"
+...
+---
+
+This is the summary. It is published to Facebook as a standalone post and
+shown as the lead section on the website.
+
+<!-- more -->
+
+## Detailed Content
+
+Everything below the separator is additional detail. It only appears on the
+full post detail page on the website.
+```
+
+### Writing the summary (IMPORTANT)
+
+The summary (everything above `<!-- more -->`) is what gets posted to Facebook. It must be **self-contained and complete** — a Facebook reader should get the full value of the post without needing to click through to the website. Do NOT write teaser/clickbait summaries that try to drive traffic. Instead:
+
+- Include all key points, conclusions, and takeaways in the summary
+- Write it as if the reader will never visit the website
+- The summary IS the post for Facebook audiences
+- The "Read more" link is appended automatically but should be optional, not required
+
+The detailed body below `<!-- more -->` is for bonus content: deeper technical breakdowns, code examples, step-by-step walkthroughs, or supplementary material that adds depth but isn't essential.
+
+### How each section is used
+
+| Section | Post list page | Post detail page | Facebook |
+|---------|---------------|-----------------|----------|
+| Summary (above `<!-- more -->`) | Shown as excerpt | Shown as lead section (slightly larger text) | Published as the full post body |
+| Detailed body (below `<!-- more -->`) | Hidden | Shown below a divider | Not included |
+| `description` frontmatter field | Not shown | Used for OG/SEO meta | Fallback if no summary |
+
+If there is no `<!-- more -->` separator, the entire body is treated as the summary.
+
+## Markdown Syntax
 
 Standard Markdown is supported: headings, bold, italic, links, images, code blocks, blockquotes, lists, and horizontal rules.
 
@@ -99,9 +141,10 @@ The GitHub Action at `.github/workflows/facebook-publish.yml` triggers on every 
 ### What it does
 
 1. Detects newly added `.md` files (not edits — only new files)
-2. Extracts `title`, `description`, and `image` from frontmatter
-3. If `image` is set: publishes a **photo post** to the Facebook Page with the image embedded and the post link in the caption
-4. If no `image`: publishes a **text post** with the title, description, and link
+2. Extracts `title`, `image`, and **summary** (body text before `<!-- more -->`) from the post
+3. If `image` is set: publishes a **photo post** to the Facebook Page with the image embedded and the summary in the caption
+4. If no `image`: publishes a **text post** with the title, summary, and link
+5. If no `<!-- more -->` separator: falls back to the `description` frontmatter field
 
 ### What it does NOT do
 
@@ -144,5 +187,41 @@ image: "/images/posts/h3-pipeline.jpg"
 tags: ["gis", "h3", "python"]
 ---
 
-Content goes here...
+I built a spatial indexing pipeline using Uber's H3 hexagonal grid system at
+Next Geo. H3 divides the world into hexagonal cells at 16 resolution levels,
+which makes it great for aggregating point data, running spatial joins, and
+building heatmaps without expensive geometry operations.
+
+The pipeline has three stages: ingest raw GPS coordinates, index them into H3
+cells at resolution 9 (~175m edge), and aggregate metrics per cell into
+ClickHouse for fast analytical queries. This replaced our previous PostGIS
+approach and cut query times from seconds to single-digit milliseconds.
+
+Key takeaway: if your spatial workload is mostly point-in-polygon or proximity
+analysis, H3 is significantly faster and simpler than traditional GIS indexing.
+The tradeoff is that hexagons don't align to administrative boundaries, so you
+still need PostGIS for that.
+
+<!-- more -->
+
+## Technical Deep Dive
+
+### Stage 1: Ingestion
+
+Raw GPS coordinates arrive as Kafka events...
+
+### Stage 2: H3 Indexing
+
+We use the `h3-py` library to convert lat/lng pairs...
+
+### Stage 3: ClickHouse Aggregation
+
+Each H3 cell becomes a row in a ClickHouse MergeTree table...
+
+## Benchmarks
+
+| Approach | p50 query | p99 query |
+|----------|-----------|-----------|
+| PostGIS  | 1.2s      | 4.8s      |
+| H3 + CH | 3ms       | 18ms      |
 ```
