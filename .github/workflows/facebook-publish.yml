@@ -32,9 +32,10 @@ jobs:
           FILE=$(echo "$NEW_FILES" | head -n 1)
           echo "file=$FILE" >> "$GITHUB_OUTPUT"
 
-          # Extract title and description from frontmatter
+          # Extract title, description, and image from frontmatter
           TITLE=$(sed -n 's/^title: *"\(.*\)"/\1/p' "$FILE" | head -1)
           DESC=$(sed -n 's/^description: *"\(.*\)"/\1/p' "$FILE" | head -1)
+          IMAGE=$(sed -n 's/^image: *"\(.*\)"/\1/p' "$FILE" | head -1)
 
           # Derive slug from filename (e.g. hello-world.md -> hello-world)
           SLUG=$(basename "$FILE" .md)
@@ -43,6 +44,7 @@ jobs:
           echo "title=$TITLE" >> "$GITHUB_OUTPUT"
           echo "description=$DESC" >> "$GITHUB_OUTPUT"
           echo "url=$POST_URL" >> "$GITHUB_OUTPUT"
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
 
       - name: Publish to Facebook Page
         if: steps.detect.outputs.has_new == 'true'
@@ -54,18 +56,29 @@ jobs:
           DESC="${{ steps.detect.outputs.description }}"
           URL="${{ steps.detect.outputs.url }}"
 
+          IMAGE="${{ steps.detect.outputs.image }}"
+
           MESSAGE="${TITLE}
 
           ${DESC}
 
           Read more: ${URL}"
 
-          # Post a link share to the Facebook Page
-          RESPONSE=$(curl -s -X POST \
-            "https://graph.facebook.com/v21.0/${FB_PAGE_ID}/feed" \
-            -F "message=${MESSAGE}" \
-            -F "link=${URL}" \
-            -F "access_token=${FB_ACCESS_TOKEN}")
+          if [ -n "$IMAGE" ]; then
+            # Upload as a photo post with the image embedded
+            IMAGE_URL="https://dq.ms${IMAGE}"
+            RESPONSE=$(curl -s -X POST \
+              "https://graph.facebook.com/v21.0/${FB_PAGE_ID}/photos" \
+              -F "url=${IMAGE_URL}" \
+              -F "message=${MESSAGE}" \
+              -F "access_token=${FB_ACCESS_TOKEN}")
+          else
+            # Text-only post with link
+            RESPONSE=$(curl -s -X POST \
+              "https://graph.facebook.com/v21.0/${FB_PAGE_ID}/feed" \
+              -F "message=${MESSAGE}" \
+              -F "access_token=${FB_ACCESS_TOKEN}")
+          fi
 
           echo "Facebook API response: $RESPONSE"
 
