@@ -95,7 +95,8 @@ jobs:
           MESSAGE=$(printf '%s\n\n%s\n\nRead more: %s' "$TITLE" "$BODY" "$URL")
 
           if [ -n "$IMAGE" ]; then
-            IMAGE_URL="https://dq.ms${IMAGE}"
+            # Use raw GitHub URL (available instantly, no deploy delay)
+            IMAGE_URL="https://github.com/${{ github.repository }}/blob/main/public${IMAGE}?raw=true"
             RESPONSE=$(curl -s -X POST \
               "https://graph.facebook.com/v21.0/${FB_PAGE_ID}/photos" \
               -F "url=${IMAGE_URL}" \
