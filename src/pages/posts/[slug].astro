@@ -1,0 +1,96 @@
+---
+import { getCollection, render } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+import GridBackground from "../../components/GridBackground";
+import Header from "../../components/Header";
+import { t } from "../../lib/i18n";
+
+const locale = "en" as const;
+
+export async function getStaticPaths() {
+  const posts = await getCollection("posts");
+  return posts
+    .filter((p) => !p.data.draft)
+    .map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+
+const ogImage = post.data.image ?? "/og.jpg";
+const postUrl = new URL(`/posts/${post.id}`, Astro.site).toString();
+const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
+---
+
+<Layout
+  title={`${post.data.title} — Güven Değirmenci`}
+  description={post.data.description}
+  ogImage={ogImage}
+  locale={locale}
+>
+  <GridBackground client:load />
+  <Header client:load locale={locale} />
+  <main class="relative z-10 mx-auto max-w-3xl px-4 pt-20 pb-16 md:px-6">
+    <a
+      href="/posts"
+      class="mb-6 inline-block text-sm text-muted-foreground transition-colors hover:text-foreground"
+    >
+      {t(locale, "posts.backToPosts")}
+    </a>
+
+    <article>
+      <header class="mb-8">
+        <h1 class="mb-3 text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+          {post.data.title}
+        </h1>
+        <div class="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+          <time datetime={post.data.date.toISOString()}>
+            {t(locale, "posts.publishedOn")}{" "}
+            {post.data.date.toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </time>
+          {post.data.updated && (
+            <time datetime={post.data.updated.toISOString()}>
+              · {t(locale, "posts.updatedOn")}{" "}
+              {post.data.updated.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </time>
+          )}
+        </div>
+        {post.data.tags.length > 0 && (
+          <div class="mt-3 flex gap-1.5">
+            {post.data.tags.map((tag) => (
+              <span class="text-[10px] font-medium uppercase tracking-wider text-primary/70 bg-primary/5 px-1.5 py-0.5">
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </header>
+
+      <div class="post-content max-w-none">
+        <Content />
+      </div>
+
+      <footer class="mt-10 pt-6 border-t border-border">
+        <a
+          href={fbShareUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border border-border text-muted-foreground transition-colors hover:text-foreground hover:border-primary/30"
+        >
+          <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          </svg>
+          {t(locale, "posts.shareOnFacebook")}
+        </a>
+      </footer>
+    </article>
+  </main>
+</Layout>

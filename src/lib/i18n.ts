@@ -225,6 +225,20 @@ const translations = {
     "seo.defaultDescription":
       "Güven Değirmenci — Full-stack developer and Managing Partner at Next Geo, specializing in AI-powered location analytics, GIS systems, and developer tools.",
 
+    // Posts
+    "nav.posts": "Posts",
+    "posts.label": "Posts",
+    "posts.heading": "Writing.",
+    "posts.description": "Thoughts, tutorials, and notes on things I'm building.",
+    "posts.readMore": "Read more",
+    "posts.backToPosts": "\u2190 Back to posts",
+    "posts.publishedOn": "Published on",
+    "posts.updatedOn": "Updated on",
+    "posts.shareOnFacebook": "Share on Facebook",
+    "seo.posts.title": "Posts \u2014 G\u00fcven De\u011firmenci",
+    "seo.posts.description":
+      "Thoughts, tutorials, and notes on full-stack development, GIS, and developer tools.",
+
     // Language switcher
     "lang.switch": "TR",
     "lang.switchLabel": "Türkçe",
@@ -456,6 +470,20 @@ const translations = {
       "Uber H3 altıgen ızgara hücrelerini koyu temalı interaktif haritada görselleştirmek için ücretsiz çevrimiçi araç. Herhangi bir H3 indeksi girerek hücreyi anında bulun ve inceleyin.",
     "seo.defaultDescription":
       "Güven Değirmenci — Yapay zeka destekli konum analitiği, CBS sistemleri ve geliştirici araçları konularında uzmanlaşmış full-stack geliştirici ve Next Geo'da Yönetici Ortak.",
+
+    // Posts
+    "nav.posts": "Yazılar",
+    "posts.label": "Yazılar",
+    "posts.heading": "Yazılar.",
+    "posts.description": "Geliştirdiğim projeler hakkında düşünceler, rehberler ve notlar.",
+    "posts.readMore": "Devamını oku",
+    "posts.backToPosts": "\u2190 Yazılara dön",
+    "posts.publishedOn": "Yayınlanma tarihi",
+    "posts.updatedOn": "Güncellenme tarihi",
+    "posts.shareOnFacebook": "Facebook'ta paylaş",
+    "seo.posts.title": "Yazılar \u2014 G\u00fcven De\u011firmenci",
+    "seo.posts.description":
+      "Full-stack geliştirme, CBS ve geliştirici araçları hakkında düşünceler, rehberler ve notlar.",
 
     // Language switcher
     "lang.switch": "EN",

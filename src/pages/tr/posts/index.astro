@@ -1,0 +1,71 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../../../layouts/Layout.astro";
+import GridBackground from "../../../components/GridBackground";
+import Header from "../../../components/Header";
+import { t } from "../../../lib/i18n";
+
+const locale = "tr" as const;
+
+const posts = (await getCollection("posts"))
+  .filter((p) => !p.data.draft)
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+---
+
+<Layout
+  title={t(locale, "seo.posts.title")}
+  description={t(locale, "seo.posts.description")}
+  locale={locale}
+>
+  <GridBackground client:load />
+  <Header client:load locale={locale} />
+  <main class="relative z-10 mx-auto max-w-5xl px-4 pt-20 pb-16 md:px-6">
+    <span class="mb-3 block text-xs font-semibold tracking-[0.1em] text-primary uppercase">
+      {t(locale, "posts.label")}
+    </span>
+    <h1 class="mb-2 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+      {t(locale, "posts.heading")}
+    </h1>
+    <p class="mb-10 max-w-lg text-base text-muted-foreground">
+      {t(locale, "posts.description")}
+    </p>
+
+    <div class="grid gap-4">
+      {posts.map((post) => (
+        <a
+          href={`/tr/posts/${post.id}`}
+          class="group border border-border bg-card p-5 transition-all hover:border-primary/20 hover:bg-card/80 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
+        >
+          <div class="flex items-center gap-3 mb-2">
+            <time
+              datetime={post.data.date.toISOString()}
+              class="text-xs text-muted-foreground tabular-nums"
+            >
+              {post.data.date.toLocaleDateString("tr-TR", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}
+            </time>
+            {post.data.tags.length > 0 && (
+              <div class="flex gap-1.5">
+                {post.data.tags.map((tag) => (
+                  <span class="text-[10px] font-medium uppercase tracking-wider text-primary/70 bg-primary/5 px-1.5 py-0.5">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          <h2 class="mb-1.5 text-sm font-semibold text-card-foreground">
+            {post.data.title_tr ?? post.data.title}
+          </h2>
+          <p class="text-sm text-muted-foreground">
+            {post.data.description_tr ?? post.data.description}
+          </p>
+          <div class="mt-4 h-0.5 w-8 bg-primary/30 transition-all group-hover:w-12 group-hover:bg-primary/60" />
+        </a>
+      ))}
+    </div>
+  </main>
+</Layout>
