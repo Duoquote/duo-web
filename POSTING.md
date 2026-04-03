@@ -101,6 +101,28 @@ The summary (everything above `<!-- more -->`) is what gets posted to Facebook. 
 
 The detailed body below `<!-- more -->` is for bonus content: deeper technical breakdowns, code examples, step-by-step walkthroughs, or supplementary material that adds depth but isn't essential.
 
+### Summary formatting rules (Facebook)
+
+The summary is converted to **plain text** before posting to Facebook (markdown syntax is stripped automatically via `remove-markdown`). Because of this:
+
+- **Do NOT use markdown tables** in the summary — they become unreadable plain text on Facebook. Use simple lists instead:
+  ```markdown
+  Bad (table — breaks on Facebook):
+  | Model | Params | Best For |
+  |-------|--------|----------|
+  | Qwen  | 7B     | Detail   |
+
+  Good (list — reads well everywhere):
+  - Qwen (7B) — best for detailed annotation
+  - InternVL2.5 (26B) — #1 open-source captioner
+  - Florence-2 (770M) — ultra-lightweight, edge-ready
+  ```
+- **Do NOT use code blocks** — they lose formatting on Facebook
+- **Do NOT use images** in the summary — use the `image` frontmatter field for the Facebook photo instead
+- **Bold/italic/links are fine** — they get stripped to plain text cleanly
+- **Lists and line breaks are fine** — they translate well to Facebook
+- Keep tables, code blocks, and images for the detailed body below `<!-- more -->`
+
 ### How each section is used
 
 | Section | Post list page | Post detail page | Facebook |

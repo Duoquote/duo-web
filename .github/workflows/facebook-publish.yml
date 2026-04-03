@@ -14,7 +14,14 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Detect new posts
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install remove-markdown
+        run: npm install remove-markdown
+
+      - name: Detect and prepare post
         id: detect
         run: |
           # Find markdown files added in this push
@@ -28,29 +35,48 @@ jobs:
 
           echo "has_new=true" >> "$GITHUB_OUTPUT"
 
-          # Parse frontmatter from the first new post
           FILE=$(echo "$NEW_FILES" | head -n 1)
-          echo "file=$FILE" >> "$GITHUB_OUTPUT"
-
-          # Extract title, description, image, and summary from frontmatter/body
-          TITLE=$(sed -n 's/^title: *"\(.*\)"/\1/p' "$FILE" | head -1)
-          DESC=$(sed -n 's/^description: *"\(.*\)"/\1/p' "$FILE" | head -1)
-          IMAGE=$(sed -n 's/^image: *"\(.*\)"/\1/p' "$FILE" | head -1)
-
-          # Extract summary: body content before <!-- more -->, stripping frontmatter and markdown syntax
-          SUMMARY=$(awk '/^---$/{if(++c==2){f=1;next}}f{if(/<!-- more -->/){exit}print}' "$FILE" \
-            | sed 's/^#\+ //; s/\*\*//g; s/\*//g; s/`//g; s/\[//g; s/\]//g; s/([^)]*)//g' \
-            | tr '\n' ' ' | sed 's/  */ /g; s/^ //; s/ $//')
-
-          # Derive slug from filename (e.g. hello-world.md -> hello-world)
           SLUG=$(basename "$FILE" .md)
-          POST_URL="https://dq.ms/posts/${SLUG}"
 
-          echo "title=$TITLE" >> "$GITHUB_OUTPUT"
-          echo "description=$DESC" >> "$GITHUB_OUTPUT"
-          echo "url=$POST_URL" >> "$GITHUB_OUTPUT"
-          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
-          echo "summary=$SUMMARY" >> "$GITHUB_OUTPUT"
+          # Use Node to extract frontmatter fields and convert summary to plain text
+          node -e "
+            const fs = require('fs');
+            const removeMd = require('remove-markdown');
+
+            const raw = fs.readFileSync('$FILE', 'utf-8');
+
+            // Split frontmatter and body
+            const parts = raw.split('---');
+            const frontmatter = parts[1] || '';
+            const body = parts.slice(2).join('---').trim();
+
+            // Parse frontmatter fields
+            const field = (key) => {
+              const m = frontmatter.match(new RegExp('^' + key + ':\\s*\"(.*)\"', 'm'));
+              return m ? m[1] : '';
+            };
+
+            const title = field('title');
+            const desc = field('description');
+            const image = field('image');
+
+            // Extract summary (before <!-- more -->)
+            const moreSplit = body.split('<!-- more -->');
+            const summaryMd = moreSplit[0].trim();
+
+            // Convert markdown to clean plain text
+            const summary = summaryMd ? removeMd(summaryMd, { gfm: true }).trim() : '';
+
+            // Write to temp files (avoids all shell escaping issues)
+            fs.writeFileSync('/tmp/fb_title.txt', title);
+            fs.writeFileSync('/tmp/fb_desc.txt', desc);
+            fs.writeFileSync('/tmp/fb_image.txt', image);
+            fs.writeFileSync('/tmp/fb_summary.txt', summary);
+            fs.writeFileSync('/tmp/fb_url.txt', 'https://dq.ms/posts/$SLUG');
+          "
+
+          echo "image=$(cat /tmp/fb_image.txt)" >> "$GITHUB_OUTPUT"
+          echo "url=$(cat /tmp/fb_url.txt)" >> "$GITHUB_OUTPUT"
 
       - name: Publish to Facebook Page
         if: steps.detect.outputs.has_new == 'true'
@@ -58,24 +84,19 @@ jobs:
           FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
           FB_ACCESS_TOKEN: ${{ secrets.FB_ACCESS_TOKEN }}
         run: |
-          TITLE="${{ steps.detect.outputs.title }}"
-          SUMMARY="${{ steps.detect.outputs.summary }}"
-          DESC="${{ steps.detect.outputs.description }}"
-          URL="${{ steps.detect.outputs.url }}"
-
+          TITLE=$(cat /tmp/fb_title.txt)
+          SUMMARY=$(cat /tmp/fb_summary.txt)
+          DESC=$(cat /tmp/fb_desc.txt)
+          URL=$(cat /tmp/fb_url.txt)
           IMAGE="${{ steps.detect.outputs.image }}"
 
-          # Use summary (body before <!-- more -->) if available, otherwise fall back to description
+          # Use summary if available, otherwise fall back to description
           BODY="${SUMMARY:-$DESC}"
 
-          MESSAGE="${TITLE}
-
-          ${BODY}
-
-          Read more: ${URL}"
+          # Build the message
+          MESSAGE=$(printf '%s\n\n%s\n\nRead more: %s' "$TITLE" "$BODY" "$URL")
 
           if [ -n "$IMAGE" ]; then
-            # Upload as a photo post with the image embedded
             IMAGE_URL="https://dq.ms${IMAGE}"
             RESPONSE=$(curl -s -X POST \
               "https://graph.facebook.com/v21.0/${FB_PAGE_ID}/photos" \
@@ -83,7 +104,6 @@ jobs:
               -F "message=${MESSAGE}" \
               -F "access_token=${FB_ACCESS_TOKEN}")
           else
-            # Text-only post with link
             RESPONSE=$(curl -s -X POST \
               "https://graph.facebook.com/v21.0/${FB_PAGE_ID}/feed" \
               -F "message=${MESSAGE}" \
@@ -92,7 +112,6 @@ jobs:
 
           echo "Facebook API response: $RESPONSE"
 
-          # Check for errors
           if echo "$RESPONSE" | grep -q '"error"'; then
             echo "::error::Facebook API returned an error"
             exit 1

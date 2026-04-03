@@ -11,20 +11,25 @@ We spent a full day researching, benchmarking, and stress-testing every major op
 
 Here's our definitive tier list for 2026:
 
-| Tier | Model | Params | Best For |
-|------|-------|--------|----------|
-| **S** | **InternVL2.5-26B** | 26B | #1 open-source captioner (CapArena champion) |
-| **S** | **Qwen2.5-VL-7B/72B** | 7–72B | Detailed annotation, OCR, multilingual |
-| **A** | **CogVLM2-19B** | 19B | Highest quality per parameter |
-| **A** | **Gemma 3 (4B/12B)** | 4–27B | Best performance-to-cost ratio |
-| **A** | **Molmo-7B-D** | 7B | Fully open (data + code + weights) |
-| **B+** | **BLIP-2 FlanT5-XXL** | 12B | Classic captioning, battle-tested |
-| **B+** | **LLaVA-NeXT-7B** | 7B | Instruction-following descriptions |
-| **B** | **xGen-MM (BLIP-3)** | 4–8B | Salesforce's own BLIP replacement |
-| **B** | **Florence-2-large** | 770M | Ultra-lightweight, edge-ready |
-| **C** | **BLIP-1 Large** | 500M | Fast and simple, but outdated |
+**S-Tier (the new kings):**
+- **InternVL2.5-26B** — #1 open-source captioner, CapArena champion, rivals GPT-4o
+- **Qwen2.5-VL** (7B/72B) — exceptional detail, built-in OCR, 29 languages. Even the 7B outperforms most prior 70B+ models
 
-**The S-Tier picks:** InternVL2.5 is ranked #1 among open-source models on CapArena, rivaling GPT-4o. Qwen2.5-VL offers exceptional detail with built-in OCR and 29-language support — even the 7B outperforms most prior 70B+ models. Both crush BLIP-2 on every modern benchmark by 10–20+ percentage points.
+**A-Tier (excellent alternatives):**
+- **CogVLM2-19B** — highest quality per parameter
+- **Gemma 3** (4B/12B/27B) — best performance-to-cost ratio, native multimodal
+- **Molmo-7B-D** — fully open (data + code + weights), supports pointing
+
+**B-Tier (still solid):**
+- **BLIP-2 FlanT5-XXL** (12B) — classic captioning, battle-tested
+- **LLaVA-NeXT-7B** — good at instruction-following descriptions
+- **xGen-MM / BLIP-3** (4–8B) — Salesforce's own BLIP replacement
+- **Florence-2-large** (770M) — ultra-lightweight, edge-ready
+
+**C-Tier (legacy):**
+- **BLIP-1 Large** (500M) — fast and simple, but outdated
+
+The S-Tier models crush BLIP-2 on every modern benchmark by 10–20+ percentage points.
 
 **The biggest surprise — Florence-2.** At just 770M parameters, it produces richer captions than BLIP-2 at 4.1B. Here's the same cat photo:
 
@@ -35,13 +40,10 @@ Here's our definitive tier list for 2026:
 That's 5x fewer parameters for 6x more descriptive output.
 
 **CPU benchmark results:**
-
-| Model | Params | ms/image | Avg Words |
-|-------|--------|----------|-----------|
-| BLIP-1 base | 247M | ~912 | ~9 |
-| BLIP-1 large | 500M | ~1,794 | ~10 |
-| BLIP-2 FlanT5-XL | 4.1B | ~8,077 | ~12 |
-| Florence-2-large | 770M | ~13,023 | ~68 |
+- BLIP-1 base (247M) — ~912 ms/image, ~9 words per caption
+- BLIP-1 large (500M) — ~1,794 ms/image, ~10 words per caption
+- BLIP-2 FlanT5-XL (4.1B) — ~8,077 ms/image, ~12 words per caption
+- Florence-2-large (770M) — ~13,023 ms/image, ~68 words per caption
 
 **CLIP clarification:** CLIP is not a captioning model — it's contrastive (matches images to text, can't generate). Use it for classification, retrieval, and filtering. For caption generation, use the models above.
 
