@@ -129,7 +129,8 @@ async function runTiledInference(
 ): Promise<ImageData | null> {
   try {
     const session = await ort.InferenceSession.create(modelData, {
-      executionProviders: ["webgpu", "wasm"],
+      executionProviders: ["wasm"],
+      graphOptimizationLevel: "disabled",
     });
 
     const { width: inW, height: inH } = imageData;
@@ -248,6 +249,14 @@ async function runSingleTile(
     }
   }
 
+  // Log input stats
+  let inMin = Infinity, inMax = -Infinity;
+  for (let i = 0; i < Math.min(input.length, 10000); i++) {
+    if (input[i] < inMin) inMin = input[i];
+    if (input[i] > inMax) inMax = input[i];
+  }
+  console.log(`[AI] Input: ${w}x${h}, range: [${inMin.toFixed(3)}, ${inMax.toFixed(3)}]`);
+
   const feeds = {
     image: new ort.Tensor("float32", input, [1, 3, h, w]),
   };
@@ -257,6 +266,15 @@ async function runSingleTile(
   const outDims = results[outKey].dims;
   const outH = outDims[2];
   const outW = outDims[3];
+
+  // Log output stats
+  let outMin = Infinity, outMax = -Infinity, outSum = 0;
+  for (let i = 0; i < Math.min(outData.length, 10000); i++) {
+    if (outData[i] < outMin) outMin = outData[i];
+    if (outData[i] > outMax) outMax = outData[i];
+    outSum += outData[i];
+  }
+  console.log(`[AI] Output: ${outW}x${outH}, range: [${outMin.toFixed(3)}, ${outMax.toFixed(3)}], mean: ${(outSum / Math.min(outData.length, 10000)).toFixed(3)}`);
 
   const output = new Uint8ClampedArray(outW * outH * 4);
   for (let y = 0; y < outH; y++) {

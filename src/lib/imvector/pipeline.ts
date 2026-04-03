@@ -10,6 +10,81 @@ import type {
 import { optimizeSvg } from "./svgo";
 import { aiUpscale, hasWebGPU } from "./ai";
 
+// ── Debug helper (dev only) ──────────────────────────────────
+
+function downloadPng(
+  rgba: Uint8ClampedArray,
+  w: number,
+  h: number,
+  filename: string,
+) {
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d")!;
+  ctx.putImageData(new ImageData(rgba, w, h), 0, 0);
+  canvas.toBlob((blob) => {
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, "image/png");
+}
+
+export async function downloadDebugImages(
+  file: File,
+  settings: ProcessSettings,
+): Promise<void> {
+  console.log("[Debug] Starting debug pipeline...");
+
+  // Step 0: Load raw pixels
+  const imageData = await loadImageToPixels(file);
+  let { width, height } = imageData;
+  let pixels = imageData.data;
+  console.log(`[Debug] 0_input: ${width}x${height}, ${pixels.length} bytes`);
+  downloadPng(pixels, width, height, "debug_0_input.png");
+
+  // Step 1: AI upscale (if enabled)
+  if (settings.aiUpscale) {
+    const gpuAvailable = await hasWebGPU();
+    console.log(`[Debug] WebGPU available: ${gpuAvailable}`);
+    if (gpuAvailable) {
+      const maxDim = Math.max(width, height);
+      if (maxDim < 1500) {
+        console.log(`[Debug] Running AI upscale on ${width}x${height}...`);
+        let currentImageData = new ImageData(
+          new Uint8ClampedArray(pixels),
+          width,
+          height,
+        );
+        const upscaled = await aiUpscale(currentImageData, (label) =>
+          console.log(`[Debug] ${label}`),
+        );
+        if (upscaled) {
+          width = upscaled.width;
+          height = upscaled.height;
+          pixels = upscaled.data;
+          console.log(`[Debug] 1_ai_upscale: ${width}x${height}`);
+          downloadPng(upscaled.data, width, height, "debug_1_ai_upscale.png");
+        } else {
+          console.log("[Debug] AI upscale returned null");
+        }
+      } else {
+        console.log(`[Debug] Skipping AI (maxDim=${maxDim} >= 1500)`);
+      }
+    }
+  }
+
+  // Step 2: The pixels that would go to WASM
+  console.log(`[Debug] 2_wasm_input: ${width}x${height}, ${pixels.length} bytes`);
+  downloadPng(pixels, width, height, "debug_2_wasm_input.png");
+
+  console.log("[Debug] Done. Check downloaded files.");
+}
+
 /**
  * Run the full imvector pipeline for an image file.
  * Dispatches progress actions throughout.

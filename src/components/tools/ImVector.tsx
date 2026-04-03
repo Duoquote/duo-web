@@ -12,7 +12,7 @@ import type {
   ImVectorAction,
   ImageEntry,
 } from "../../lib/imvector/types";
-import { runPipeline } from "../../lib/imvector/pipeline";
+import { runPipeline, downloadDebugImages } from "../../lib/imvector/pipeline";
 import { isUpscaleAvailable } from "../../lib/imvector/ai";
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -324,6 +324,15 @@ export default function ImVector({ locale }: { locale: Locale }) {
         >
           {t(locale, "imvector.settings")}
         </button>
+
+        {import.meta.env.DEV && activeImg?.status === "ready" && (
+          <button
+            onClick={() => activeImg && downloadDebugImages(activeImg.file, state.settings)}
+            className="border border-dashed border-yellow-500/50 px-3 py-1 text-xs text-yellow-600 hover:bg-yellow-500/10"
+          >
+            Debug
+          </button>
+        )}
 
         {hasImages && (
           <button
