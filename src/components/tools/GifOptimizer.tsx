@@ -218,6 +218,7 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
   const [modH, setModH] = useState(0);
 
   const [cropDrawing, setCropDrawing] = useState(false);
+  const cropDrawingRef = useRef(false);
   const cropStartRef = useRef({ x: 0, y: 0 });
   const [previewScale, setPreviewScale] = useState(1);
 
@@ -286,6 +287,11 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
 
   // ── Preview animation (original) ─────────────────────────
 
+  // Store crop values in a ref so the animation loop can read them
+  // without re-triggering the effect (which would restart the animation)
+  const cropRef = useRef({ x: cropX, y: cropY, w: cropW, h: cropH });
+  cropRef.current = { x: cropX, y: cropY, w: cropW, h: cropH };
+
   useEffect(() => {
     if (srcFrames.length === 0 || !origCanvasRef.current) return;
 
@@ -312,6 +318,34 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
       tmp.getContext("2d")!.putImageData(frame.imageData, 0, 0);
       ctx.clearRect(0, 0, pw, ph);
       ctx.drawImage(tmp, 0, 0, pw, ph);
+
+      // Draw crop overlay
+      const c = cropRef.current;
+      const hasCrop =
+        !(c.x === 0 && c.y === 0 && c.w === srcWidth && c.h === srcHeight);
+      if (hasCrop && c.w > 0 && c.h > 0) {
+        // Dim area outside crop
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        const sx = c.x * scale;
+        const sy = c.y * scale;
+        const sw = c.w * scale;
+        const sh = c.h * scale;
+        // Top
+        ctx.fillRect(0, 0, pw, sy);
+        // Bottom
+        ctx.fillRect(0, sy + sh, pw, ph - sy - sh);
+        // Left
+        ctx.fillRect(0, sy, sx, sh);
+        // Right
+        ctx.fillRect(sx + sw, sy, pw - sx - sw, sh);
+        // Crop border
+        ctx.strokeStyle = "#facc15";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        ctx.strokeRect(sx, sy, sw, sh);
+        ctx.setLineDash([]);
+      }
+
       if (playing) {
         frameIdxRef.current = (idx + 1) % srcFrames.length;
         timeoutId = setTimeout(drawFrame, Math.max(frame.delay, 20));
@@ -376,13 +410,14 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
         y: e.clientY - rect.top,
       };
       setCropDrawing(true);
+      cropDrawingRef.current = true;
     },
     [srcFrames],
   );
 
   const onCropDrag = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
-      if (!cropDrawing) return;
+      if (!cropDrawingRef.current) return;
       const rect = e.currentTarget.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
@@ -392,21 +427,67 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
       const ry = Math.round(Math.min(sy, y) / previewScale);
       const rw = Math.round(Math.abs(x - sx) / previewScale);
       const rh = Math.round(Math.abs(y - sy) / previewScale);
-      setCropX(Math.max(0, Math.min(rx, srcWidth)));
-      setCropY(Math.max(0, Math.min(ry, srcHeight)));
-      setCropW(Math.max(1, Math.min(rw, srcWidth - rx)));
-      setCropH(Math.max(1, Math.min(rh, srcHeight - ry)));
+
+      const newCropX = Math.max(0, Math.min(rx, srcWidth));
+      const newCropY = Math.max(0, Math.min(ry, srcHeight));
+      const newCropW = Math.max(1, Math.min(rw, srcWidth - newCropX));
+      const newCropH = Math.max(1, Math.min(rh, srcHeight - newCropY));
+
+      // Update ref immediately for canvas overlay rendering
+      cropRef.current = { x: newCropX, y: newCropY, w: newCropW, h: newCropH };
+      setCropX(newCropX);
+      setCropY(newCropY);
+      setCropW(newCropW);
+      setCropH(newCropH);
+
+      // Redraw overlay immediately if animation is paused
+      if (!playing && origCanvasRef.current && srcFrames.length > 0) {
+        const canvas = origCanvasRef.current;
+        const ctx = canvas.getContext("2d")!;
+        const scale = previewScale;
+        const pw = canvas.width;
+        const ph = canvas.height;
+
+        // Redraw current frame
+        const idx = frameIdxRef.current % srcFrames.length;
+        const tmp = document.createElement("canvas");
+        tmp.width = srcWidth;
+        tmp.height = srcHeight;
+        tmp.getContext("2d")!.putImageData(srcFrames[idx].imageData, 0, 0);
+        ctx.clearRect(0, 0, pw, ph);
+        ctx.drawImage(tmp, 0, 0, pw, ph);
+
+        // Overlay
+        const c = cropRef.current;
+        const csx = c.x * scale;
+        const csy = c.y * scale;
+        const csw = c.w * scale;
+        const csh = c.h * scale;
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        ctx.fillRect(0, 0, pw, csy);
+        ctx.fillRect(0, csy + csh, pw, ph - csy - csh);
+        ctx.fillRect(0, csy, csx, csh);
+        ctx.fillRect(csx + csw, csy, pw - csx - csw, csh);
+        ctx.strokeStyle = "#facc15";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        ctx.strokeRect(csx, csy, csw, csh);
+        ctx.setLineDash([]);
+      }
     },
-    [cropDrawing, previewScale, srcWidth, srcHeight],
+    [previewScale, srcWidth, srcHeight, playing, srcFrames],
   );
 
   const onCropEnd = useCallback(() => {
+    if (!cropDrawingRef.current) return;
+    cropDrawingRef.current = false;
     setCropDrawing(false);
-    if (keepAspect && cropW > 0 && cropH > 0) {
+    // Update resize to match crop dimensions
+    if (cropW > 0 && cropH > 0) {
       setResizeW(cropW);
       setResizeH(cropH);
     }
-  }, [cropW, cropH, keepAspect]);
+  }, [cropW, cropH]);
 
   // ── Resize with aspect ratio ──────────────────────────────
 
@@ -453,7 +534,9 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
       const noCrop =
         crop.x === 0 && crop.y === 0 &&
         crop.w === srcWidth && crop.h === srcHeight;
-      const noResize = resizeW === srcWidth && resizeH === srcHeight;
+      const effectiveW = noCrop ? srcWidth : crop.w;
+      const effectiveH = noCrop ? srcHeight : crop.h;
+      const noResize = resizeW === effectiveW && resizeH === effectiveH;
       const noCompression = compression === 0 && skipFrames <= 1;
       const isPassthrough = noCrop && noResize && noCompression && !discordMode;
 
@@ -555,6 +638,8 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
   useEffect(() => {
     if (srcFrames.length === 0) return;
     if (phase === "loading") return;
+    // Don't process while user is actively dragging a crop selection
+    if (cropDrawingRef.current) return;
 
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
@@ -565,6 +650,7 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
   }, [
     cropX, cropY, cropW, cropH,
     resizeW, resizeH, compression, skipFrames, discordMode,
+    cropDrawing, // triggers when drag ends (setCropDrawing(false))
     srcFrames,
   ]);
 
