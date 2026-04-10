@@ -57,6 +57,11 @@ const translations = {
     "tools.imvector.description":
       "Convert raster images to SVG vectors in your browser.",
 
+    // GIF Optimizer tool listing
+    "tools.gifOptimizer.name": "GIF Optimizer",
+    "tools.gifOptimizer.description":
+      "Crop, resize, and compress GIF animations in your browser.",
+
     // H3 Explorer
     "h3.backToTools": "← Back to tools",
     "h3.heading": "H3 Explorer",
@@ -174,6 +179,44 @@ const translations = {
     "imvector.modelDontShow": "Don't show this again",
     "imvector.modelAccept": "Download & Continue",
     "imvector.modelSkip": "Skip AI",
+
+    // GIF Optimizer
+    "gifOptimizer.backToTools": "\u2190 Back to tools",
+    "gifOptimizer.heading": "GIF Optimizer",
+    "gifOptimizer.description":
+      "Crop, resize, and compress GIF animations entirely in your browser. No upload, no server.",
+    "gifOptimizer.dropzone": "Drop a GIF here or click to browse",
+    "gifOptimizer.dropzoneActive": "Drop it!",
+    "gifOptimizer.errorFormat": "Please select a GIF file",
+    "gifOptimizer.original": "Original",
+    "gifOptimizer.result": "Result",
+    "gifOptimizer.frames": "frames",
+    "gifOptimizer.crop": "Crop",
+    "gifOptimizer.cropHint": "Drag on the preview to crop",
+    "gifOptimizer.resetCrop": "Reset crop",
+    "gifOptimizer.resize": "Resize",
+    "gifOptimizer.keepAspect": "Lock aspect ratio",
+    "gifOptimizer.optimization": "Optimization",
+    "gifOptimizer.compressionPower": "Compression",
+    "gifOptimizer.frameSkip": "Frame skip",
+    "gifOptimizer.skipNone": "Keep all frames",
+    "gifOptimizer.skipEvery2": "Keep every 2nd",
+    "gifOptimizer.skipEvery3": "Keep every 3rd",
+    "gifOptimizer.skipEvery4": "Keep every 4th",
+    "gifOptimizer.discord": "Discord friendly (<10 MB)",
+    "gifOptimizer.discordHint":
+      "Auto-adjusts compression to fit under 10 MB. Manual settings are ignored.",
+    "gifOptimizer.optimize": "Optimize",
+    "gifOptimizer.processing": "Processing...",
+    "gifOptimizer.download": "Download",
+    "gifOptimizer.loadAnother": "Load another GIF",
+    "gifOptimizer.previewHint": "Click Optimize to preview",
+
+    // SEO — GIF Optimizer
+    "seo.gifOptimizer.title":
+      "GIF Optimizer — Crop, Resize & Compress GIFs in Your Browser",
+    "seo.gifOptimizer.description":
+      "Free online GIF optimizer. Crop, resize, compress, and skip frames entirely in your browser. Discord-friendly mode included. No upload required.",
 
     // SEO — Converter
     "seo.converter.title":
@@ -301,6 +344,11 @@ const translations = {
     "tools.imvector.description":
       "Raster görselleri tarayıcınızda SVG vektörlere dönüştürün.",
 
+    // GIF Optimizer tool listing
+    "tools.gifOptimizer.name": "GIF Optimize Edici",
+    "tools.gifOptimizer.description":
+      "GIF animasyonlarını tarayıcınızda kırpın, boyutlandırın ve sıkıştırın.",
+
     // H3 Explorer
     "h3.backToTools": "← Araçlara dön",
     "h3.heading": "H3 Gezgini",
@@ -420,6 +468,44 @@ const translations = {
     "imvector.modelDontShow": "Bir daha gösterme",
     "imvector.modelAccept": "İndir ve Devam Et",
     "imvector.modelSkip": "AI'yı Atla",
+
+    // GIF Optimizer
+    "gifOptimizer.backToTools": "\u2190 Araçlara dön",
+    "gifOptimizer.heading": "GIF Optimize Edici",
+    "gifOptimizer.description":
+      "GIF animasyonlarını tamamen tarayıcınızda kırpın, boyutlandırın ve sıkıştırın. Yükleme yok, sunucu yok.",
+    "gifOptimizer.dropzone": "Bir GIF sürükleyin veya tıklayıp seçin",
+    "gifOptimizer.dropzoneActive": "Bırakın!",
+    "gifOptimizer.errorFormat": "Lütfen bir GIF dosyası seçin",
+    "gifOptimizer.original": "Orijinal",
+    "gifOptimizer.result": "Sonuç",
+    "gifOptimizer.frames": "kare",
+    "gifOptimizer.crop": "Kırpma",
+    "gifOptimizer.cropHint": "Kırpmak için önizleme üzerinde sürükleyin",
+    "gifOptimizer.resetCrop": "Kırpmayı sıfırla",
+    "gifOptimizer.resize": "Boyutlandır",
+    "gifOptimizer.keepAspect": "En-boy oranını koru",
+    "gifOptimizer.optimization": "Optimizasyon",
+    "gifOptimizer.compressionPower": "Sıkıştırma",
+    "gifOptimizer.frameSkip": "Kare atlama",
+    "gifOptimizer.skipNone": "Tüm kareleri koru",
+    "gifOptimizer.skipEvery2": "Her 2. kareyi koru",
+    "gifOptimizer.skipEvery3": "Her 3. kareyi koru",
+    "gifOptimizer.skipEvery4": "Her 4. kareyi koru",
+    "gifOptimizer.discord": "Discord uyumlu (<10 MB)",
+    "gifOptimizer.discordHint":
+      "10 MB altına sığması için sıkıştırmayı otomatik ayarlar. Manuel ayarlar yok sayılır.",
+    "gifOptimizer.optimize": "Optimize Et",
+    "gifOptimizer.processing": "İşleniyor...",
+    "gifOptimizer.download": "İndir",
+    "gifOptimizer.loadAnother": "Başka bir GIF yükle",
+    "gifOptimizer.previewHint": "Önizleme için Optimize Et'e tıklayın",
+
+    // SEO — GIF Optimizer
+    "seo.gifOptimizer.title":
+      "GIF Optimize Edici — Tarayıcınızda GIF Kırpma, Boyutlandırma ve Sıkıştırma",
+    "seo.gifOptimizer.description":
+      "Ücretsiz çevrimiçi GIF optimize edici. GIF dosyalarını tamamen tarayıcınızda kırpın, boyutlandırın ve sıkıştırın. Discord uyumlu mod dahil. Yükleme gerekmez.",
 
     // SEO — Converter
     "seo.converter.title":
