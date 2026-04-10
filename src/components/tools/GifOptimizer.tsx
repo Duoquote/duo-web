@@ -11,6 +11,8 @@ import {
 import type { Locale } from "../../lib/i18n";
 import { t } from "../../lib/i18n";
 import { cn } from "../../lib/utils";
+import { parseGIF, decompressFrames } from "gifuct-js";
+import { GIFEncoder, quantize, applyPalette } from "gifenc";
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -32,135 +34,81 @@ interface CropRegion {
   h: number;
 }
 
-type Phase =
-  | "idle"
-  | "loading"
-  | "loaded"
-  | "processing"
-  | "done"
-  | "error";
+type Phase = "idle" | "loading" | "loaded" | "processing" | "done" | "error";
 
-// ── GIF Decoder (using canvas) ──────────────────────────────
+// ── GIF Decoder (gifuct-js) ─────────────────────────────────
 
 async function decodeGif(
   file: File,
 ): Promise<{ frames: GifFrame[]; width: number; height: number }> {
   const arrayBuffer = await file.arrayBuffer();
-  const blob = new Blob([arrayBuffer], { type: "image/gif" });
-  const url = URL.createObjectURL(blob);
+  const gif = parseGIF(arrayBuffer);
+  const rawFrames = decompressFrames(gif, true);
 
-  // Use the browser's ImageDecoder API if available, otherwise fall back
-  if ("ImageDecoder" in window) {
-    return decodeWithImageDecoder(arrayBuffer);
-  }
-  // Fallback: load as single image (won't get frames)
-  return decodeWithImg(url);
-}
+  if (rawFrames.length === 0) throw new Error("No frames found in GIF");
 
-async function decodeWithImageDecoder(
-  buffer: ArrayBuffer,
-): Promise<{ frames: GifFrame[]; width: number; height: number }> {
-  // @ts-expect-error ImageDecoder is not in all TS libs
-  const decoder = new ImageDecoder({
-    data: buffer,
-    type: "image/gif",
-  });
-  await decoder.completed;
+  const width = gif.lsd.width;
+  const height = gif.lsd.height;
 
-  const frameCount = decoder.tracks.selectedTrack?.frameCount ?? 1;
+  const compositeCanvas = document.createElement("canvas");
+  compositeCanvas.width = width;
+  compositeCanvas.height = height;
+  const compositeCtx = compositeCanvas.getContext("2d")!;
+
   const frames: GifFrame[] = [];
-  let width = 0;
-  let height = 0;
 
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d")!;
+  for (const raw of rawFrames) {
+    const disposalType = raw.disposalType ?? 0;
 
-  for (let i = 0; i < frameCount; i++) {
-    const result = await decoder.decode({ frameIndex: i });
-    const vf = result.image;
+    const patchCanvas = document.createElement("canvas");
+    patchCanvas.width = raw.dims.width;
+    patchCanvas.height = raw.dims.height;
+    const patchCtx = patchCanvas.getContext("2d")!;
+    const patchData = patchCtx.createImageData(raw.dims.width, raw.dims.height);
+    patchData.data.set(raw.patch);
+    patchCtx.putImageData(patchData, 0, 0);
 
-    if (i === 0) {
-      width = vf.displayWidth;
-      height = vf.displayHeight;
-      canvas.width = width;
-      canvas.height = height;
+    compositeCtx.drawImage(patchCanvas, raw.dims.left, raw.dims.top);
+
+    const imageData = compositeCtx.getImageData(0, 0, width, height);
+    frames.push({ imageData, delay: Math.max(raw.delay || 100, 20) });
+
+    if (disposalType === 2) {
+      compositeCtx.clearRect(
+        raw.dims.left,
+        raw.dims.top,
+        raw.dims.width,
+        raw.dims.height,
+      );
     }
-
-    ctx.drawImage(vf, 0, 0);
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const delay = (vf.duration ?? 100000) / 1000; // microseconds → ms
-    frames.push({ imageData, delay: Math.max(delay, 20) });
-    vf.close();
   }
 
-  decoder.close();
   return { frames, width, height };
 }
 
-async function decodeWithImg(
-  url: string,
-): Promise<{ frames: GifFrame[]; width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(img, 0, 0);
-      const imageData = ctx.getImageData(0, 0, img.width, img.height);
-      URL.revokeObjectURL(url);
-      resolve({
-        frames: [{ imageData, delay: 100 }],
-        width: img.width,
-        height: img.height,
-      });
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("Failed to load GIF"));
-    };
-    img.src = url;
-  });
-}
+// ── GIF Encoder (gifenc — fast, built-in quantize) ──────────
 
-// ── GIF Encoder (using gif.js) ──────────────────────────────
-
-// @ts-expect-error gif.js has no type declarations
-import GIF from "gif.js";
-
-async function encodeGif(
+function encodeGif(
   frames: GifFrame[],
   width: number,
   height: number,
-  opts: {
-    colors?: number;
-    quality?: number;
-  },
-): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const gif = new GIF({
-      workers: Math.min(navigator.hardwareConcurrency || 2, 4),
-      quality: opts.quality ?? 10,
-      width,
-      height,
-      workerScript: "/gif.worker.js",
+  targetColors: number,
+): Uint8Array {
+  const gif = GIFEncoder();
+
+  for (let i = 0; i < frames.length; i++) {
+    const { data } = frames[i].imageData;
+    const palette = quantize(data, Math.max(2, Math.min(256, targetColors)));
+    const index = applyPalette(data, palette);
+    gif.writeFrame(index, width, height, {
+      palette,
+      delay: frames[i].delay,
+      dispose: 2,
     });
+  }
 
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d")!;
-
-    for (const frame of frames) {
-      ctx.putImageData(frame.imageData, 0, 0);
-      gif.addFrame(ctx, { copy: true, delay: frame.delay });
-    }
-
-    gif.on("finished", (blob: Blob) => resolve(blob));
-    gif.on("error", (err: Error) => reject(err));
-    gif.render();
-  });
+  gif.finish();
+  return gif.bytesView();
 }
 
 // ── Transform helpers ────────────────────────────────────────
@@ -174,41 +122,44 @@ function applyTransformations(
   resizeH: number,
   compression: number,
   skipFrames: number,
-): { frames: GifFrame[]; width: number; height: number; colors: number } {
-  const colors = Math.max(16, Math.round(256 - 240 * (compression / 100)));
-  const quality = Math.max(1, Math.round(30 - 28 * (compression / 100)));
+): { frames: GifFrame[]; width: number; height: number; targetColors: number } {
+  // Match original Python logic
+  const targetColors =
+    compression > 0
+      ? Math.max(16, Math.round(256 - 240 * (compression / 100)))
+      : 256;
+
+  // Auto frame skip based on compression (matching original)
+  let skipStep = skipFrames;
+  if (compression >= 80) skipStep = Math.max(skipStep, 3);
+  else if (compression >= 40) skipStep = Math.max(skipStep, 2);
 
   const result: GifFrame[] = [];
   let accDelay = 0;
 
   for (let i = 0; i < frames.length; i++) {
     accDelay += frames[i].delay;
-    if (skipFrames > 1 && i % skipFrames !== 0 && i !== 0 && i !== frames.length - 1) {
+    if (
+      skipStep > 1 &&
+      i % skipStep !== 0 &&
+      i !== 0 &&
+      i !== frames.length - 1
+    ) {
       continue;
     }
 
     const srcCanvas = document.createElement("canvas");
     srcCanvas.width = srcWidth;
     srcCanvas.height = srcHeight;
-    const srcCtx = srcCanvas.getContext("2d")!;
-    srcCtx.putImageData(frames[i].imageData, 0, 0);
+    srcCanvas.getContext("2d")!.putImageData(frames[i].imageData, 0, 0);
 
     // Crop
     const cropCanvas = document.createElement("canvas");
     cropCanvas.width = crop.w;
     cropCanvas.height = crop.h;
-    const cropCtx = cropCanvas.getContext("2d")!;
-    cropCtx.drawImage(
-      srcCanvas,
-      crop.x,
-      crop.y,
-      crop.w,
-      crop.h,
-      0,
-      0,
-      crop.w,
-      crop.h,
-    );
+    cropCanvas
+      .getContext("2d")!
+      .drawImage(srcCanvas, crop.x, crop.y, crop.w, crop.h, 0, 0, crop.w, crop.h);
 
     // Resize
     const outCanvas = document.createElement("canvas");
@@ -224,7 +175,7 @@ function applyTransformations(
     accDelay = 0;
   }
 
-  return { frames: result, width: resizeW, height: resizeH, colors };
+  return { frames: result, width: resizeW, height: resizeH, targetColors };
 }
 
 // ── Component ────────────────────────────────────────────────
@@ -235,12 +186,11 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
   const [fileName, setFileName] = useState("");
   const [fileSize, setFileSize] = useState(0);
 
-  // Source data
   const [srcFrames, setSrcFrames] = useState<GifFrame[]>([]);
   const [srcWidth, setSrcWidth] = useState(0);
   const [srcHeight, setSrcHeight] = useState(0);
+  const originalBlobRef = useRef<Blob | null>(null);
 
-  // Settings
   const [cropX, setCropX] = useState(0);
   const [cropY, setCropY] = useState(0);
   const [cropW, setCropW] = useState(0);
@@ -252,32 +202,30 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
   const [skipFrames, setSkipFrames] = useState(1);
   const [discordMode, setDiscordMode] = useState(false);
 
-  // Output
   const [outputBlob, setOutputBlob] = useState<Blob | null>(null);
   const [outputSize, setOutputSize] = useState(0);
   const [outputWidth, setOutputWidth] = useState(0);
   const [outputHeight, setOutputHeight] = useState(0);
   const [outputFrameCount, setOutputFrameCount] = useState(0);
 
-  // Preview animation
   const origCanvasRef = useRef<HTMLCanvasElement>(null);
   const modCanvasRef = useRef<HTMLCanvasElement>(null);
   const [playing, setPlaying] = useState(true);
-  const animRef = useRef<number>(0);
   const frameIdxRef = useRef(0);
   const modFrameIdxRef = useRef(0);
   const [modFrames, setModFrames] = useState<GifFrame[]>([]);
   const [modW, setModW] = useState(0);
   const [modH, setModH] = useState(0);
 
-  // Crop drawing
   const [cropDrawing, setCropDrawing] = useState(false);
   const cropStartRef = useRef({ x: 0, y: 0 });
   const [previewScale, setPreviewScale] = useState(1);
 
-  // Drag and drop
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const processingRef = useRef(false);
 
   // ── Load GIF ──────────────────────────────────────────────
 
@@ -288,6 +236,7 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
     setFileSize(file.size);
     setOutputBlob(null);
     setModFrames([]);
+    originalBlobRef.current = new Blob([await file.arrayBuffer()], { type: "image/gif" });
 
     try {
       const { frames, width, height } = await decodeGif(file);
@@ -335,7 +284,7 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
     [handleFile],
   );
 
-  // ── Preview animation ─────────────────────────────────────
+  // ── Preview animation (original) ─────────────────────────
 
   useEffect(() => {
     if (srcFrames.length === 0 || !origCanvasRef.current) return;
@@ -357,16 +306,12 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
       if (cancelled) return;
       const idx = frameIdxRef.current % srcFrames.length;
       const frame = srcFrames[idx];
-
       const tmp = document.createElement("canvas");
       tmp.width = srcWidth;
       tmp.height = srcHeight;
-      const tmpCtx = tmp.getContext("2d")!;
-      tmpCtx.putImageData(frame.imageData, 0, 0);
-
+      tmp.getContext("2d")!.putImageData(frame.imageData, 0, 0);
       ctx.clearRect(0, 0, pw, ph);
       ctx.drawImage(tmp, 0, 0, pw, ph);
-
       if (playing) {
         frameIdxRef.current = (idx + 1) % srcFrames.length;
         timeoutId = setTimeout(drawFrame, Math.max(frame.delay, 20));
@@ -380,7 +325,8 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
     };
   }, [srcFrames, srcWidth, srcHeight, playing]);
 
-  // Mod preview animation
+  // ── Preview animation (modified) ─────────────────────────
+
   useEffect(() => {
     if (modFrames.length === 0 || !modCanvasRef.current) return;
 
@@ -400,16 +346,12 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
       if (cancelled) return;
       const idx = modFrameIdxRef.current % modFrames.length;
       const frame = modFrames[idx];
-
       const tmp = document.createElement("canvas");
       tmp.width = modW;
       tmp.height = modH;
-      const tmpCtx = tmp.getContext("2d")!;
-      tmpCtx.putImageData(frame.imageData, 0, 0);
-
+      tmp.getContext("2d")!.putImageData(frame.imageData, 0, 0);
       ctx.clearRect(0, 0, pw, ph);
       ctx.drawImage(tmp, 0, 0, pw, ph);
-
       if (playing) {
         modFrameIdxRef.current = (idx + 1) % modFrames.length;
         timeoutId = setTimeout(drawFrame, Math.max(frame.delay, 20));
@@ -429,9 +371,10 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       if (srcFrames.length === 0) return;
       const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      cropStartRef.current = { x, y };
+      cropStartRef.current = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      };
       setCropDrawing(true);
     },
     [srcFrames],
@@ -487,12 +430,16 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
     [keepAspect, cropW, cropH],
   );
 
-  // ── Process ───────────────────────────────────────────────
+  // ── Process (called by debounced auto-apply) ──────────────
 
   const processGif = useCallback(async () => {
-    if (srcFrames.length === 0) return;
+    if (srcFrames.length === 0 || processingRef.current) return;
+    processingRef.current = true;
     setPhase("processing");
     setError("");
+
+    // Yield to UI before heavy work
+    await new Promise((r) => setTimeout(r, 0));
 
     try {
       const crop: CropRegion = {
@@ -502,27 +449,44 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
         h: Math.min(cropH, srcHeight - cropY),
       };
 
-      if (discordMode) {
-        // Auto-find compression that fits under 10MB
+      // Check if any transform is actually applied
+      const noCrop =
+        crop.x === 0 && crop.y === 0 &&
+        crop.w === srcWidth && crop.h === srcHeight;
+      const noResize = resizeW === srcWidth && resizeH === srcHeight;
+      const noCompression = compression === 0 && skipFrames <= 1;
+      const isPassthrough = noCrop && noResize && noCompression && !discordMode;
+
+      if (isPassthrough && originalBlobRef.current) {
+        // No transforms — use original file directly
+        setOutputBlob(originalBlobRef.current);
+        setOutputSize(originalBlobRef.current.size);
+        setOutputWidth(srcWidth);
+        setOutputHeight(srcHeight);
+        setOutputFrameCount(srcFrames.length);
+        setModFrames(srcFrames);
+        setModW(srcWidth);
+        setModH(srcHeight);
+        modFrameIdxRef.current = 0;
+      } else if (discordMode) {
         let bestBlob: Blob | null = null;
         let bestFrames: GifFrame[] = [];
         let bestW = 0;
         let bestH = 0;
 
         for (let p = 0; p <= 100; p += 15) {
-          const skip = p >= 80 ? 3 : p >= 40 ? 2 : 1;
           const scaleMul = 1.0 - 0.5 * (p / 100);
           const fw = Math.max(10, Math.round(resizeW * scaleMul));
           const fh = Math.max(10, Math.round(resizeH * scaleMul));
 
           const result = applyTransformations(
-            srcFrames, srcWidth, srcHeight, crop, fw, fh, p, skip,
+            srcFrames, srcWidth, srcHeight, crop, fw, fh, p, 1,
           );
-          const blob = await encodeGif(
-            result.frames, result.width, result.height,
-            { quality: Math.max(1, Math.round(30 - 28 * (p / 100))) },
+          const bytes = encodeGif(
+            result.frames, result.width, result.height, result.targetColors,
           );
 
+          const blob = new Blob([bytes], { type: "image/gif" });
           bestBlob = blob;
           bestFrames = result.frames;
           bestW = result.width;
@@ -543,18 +507,24 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
           modFrameIdxRef.current = 0;
         }
       } else {
-        const skip = skipFrames;
         const scaleMul = 1.0 - 0.5 * (compression / 100);
         const fw = Math.max(10, Math.round(resizeW * scaleMul));
         const fh = Math.max(10, Math.round(resizeH * scaleMul));
 
         const result = applyTransformations(
-          srcFrames, srcWidth, srcHeight, crop, fw, fh, compression, skip,
+          srcFrames, srcWidth, srcHeight, crop, fw, fh, compression, skipFrames,
         );
-        const blob = await encodeGif(
-          result.frames, result.width, result.height,
-          { quality: Math.max(1, Math.round(30 - 28 * (compression / 100))) },
+        const bytes = encodeGif(
+          result.frames, result.width, result.height, result.targetColors,
         );
+
+        let blob = new Blob([bytes], { type: "image/gif" });
+
+        // If re-encoded is larger than original and only compression changed
+        // (no crop/resize), use the original
+        if (noCrop && noResize && originalBlobRef.current && blob.size > originalBlobRef.current.size) {
+          blob = originalBlobRef.current;
+        }
 
         setOutputBlob(blob);
         setOutputSize(blob.size);
@@ -571,11 +541,31 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
     } catch (e: any) {
       setError(e.message || "Processing failed");
       setPhase("error");
+    } finally {
+      processingRef.current = false;
     }
   }, [
     srcFrames, srcWidth, srcHeight,
     cropX, cropY, cropW, cropH,
     resizeW, resizeH, compression, skipFrames, discordMode,
+  ]);
+
+  // ── Debounced auto-apply when settings change ─────────────
+
+  useEffect(() => {
+    if (srcFrames.length === 0) return;
+    if (phase === "loading") return;
+
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      processGif();
+    }, 400);
+
+    return () => clearTimeout(debounceRef.current);
+  }, [
+    cropX, cropY, cropW, cropH,
+    resizeW, resizeH, compression, skipFrames, discordMode,
+    srcFrames,
   ]);
 
   // ── Download ──────────────────────────────────────────────
@@ -594,6 +584,7 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
   // ── Reset ─────────────────────────────────────────────────
 
   const reset = useCallback(() => {
+    clearTimeout(debounceRef.current);
     setPhase("idle");
     setSrcFrames([]);
     setModFrames([]);
@@ -605,12 +596,11 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
 
   // ── Render ────────────────────────────────────────────────
 
-  const isLoaded = phase === "loaded" || phase === "done";
-  const busy = phase === "loading" || phase === "processing";
+  const isLoaded = phase === "loaded" || phase === "done" || phase === "processing";
 
   return (
     <div className="space-y-6">
-      {/* ── Dropzone ─────────────────────────────────────── */}
+      {/* Dropzone */}
       {phase === "idle" || phase === "error" ? (
         <div>
           <label
@@ -619,7 +609,6 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
               dragOver
                 ? "border-primary bg-primary/5"
                 : "border-border hover:border-primary/30",
-              "rounded-none",
             )}
             onDragOver={(e) => {
               e.preventDefault();
@@ -638,9 +627,7 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
                     ? t(locale, "gifOptimizer.dropzoneActive")
                     : t(locale, "gifOptimizer.dropzone")}
                 </span>
-                <span className="text-xs text-muted-foreground/60">
-                  .gif
-                </span>
+                <span className="text-xs text-muted-foreground/60">.gif</span>
               </>
             )}
             <input
@@ -651,43 +638,37 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
               onChange={(e) => handleFile(e.target.files)}
             />
           </label>
-          {error && (
-            <p className="mt-3 text-sm text-red-400">{error}</p>
-          )}
+          {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
         </div>
       ) : null}
 
-      {/* ── Main editor ──────────────────────────────────── */}
-      {isLoaded || busy ? (
+      {/* Main editor */}
+      {isLoaded ? (
         <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
-          {/* Previews */}
           <div className="space-y-4">
             {/* File info bar */}
-            <div className="flex items-center gap-3 border border-border bg-card px-4 py-2 text-sm">
-              <span className="truncate font-medium text-foreground">
-                {fileName}
-              </span>
+            <div className="flex flex-wrap items-center gap-3 border border-border bg-card px-4 py-2 text-sm">
+              <span className="truncate font-medium text-foreground">{fileName}</span>
+              <span className="text-muted-foreground">{formatBytes(fileSize)}</span>
               <span className="text-muted-foreground">
-                {formatBytes(fileSize)}
-              </span>
-              <span className="text-muted-foreground">
-                {srcWidth}×{srcHeight}
+                {srcWidth}&times;{srcHeight}
               </span>
               <span className="text-muted-foreground">
                 {srcFrames.length} {t(locale, "gifOptimizer.frames")}
               </span>
               <div className="ml-auto flex gap-2">
+                {phase === "processing" && (
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                )}
                 <button
                   onClick={() => setPlaying(!playing)}
                   className="rounded p-1 text-muted-foreground hover:text-foreground"
-                  title={playing ? "Pause" : "Play"}
                 >
                   {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                 </button>
                 <button
                   onClick={reset}
                   className="rounded p-1 text-muted-foreground hover:text-foreground"
-                  title={t(locale, "gifOptimizer.loadAnother")}
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -714,13 +695,14 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
                   </p>
                 </div>
               </div>
-
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   {t(locale, "gifOptimizer.result")}
                   {outputBlob && (
                     <span className="ml-2 font-normal normal-case text-primary">
-                      {formatBytes(outputSize)} · {outputWidth}×{outputHeight} · {outputFrameCount} {t(locale, "gifOptimizer.frames")}
+                      {formatBytes(outputSize)} &middot; {outputWidth}&times;
+                      {outputHeight} &middot; {outputFrameCount}{" "}
+                      {t(locale, "gifOptimizer.frames")}
                     </span>
                   )}
                 </p>
@@ -729,22 +711,18 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
                     <canvas ref={modCanvasRef} className="mx-auto" />
                   ) : (
                     <div className="flex h-48 items-center justify-center text-sm text-muted-foreground/40">
-                      {busy ? (
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                      ) : (
-                        t(locale, "gifOptimizer.previewHint")
-                      )}
+                      <Loader2 className="h-6 w-6 animate-spin" />
                     </div>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Output size comparison */}
+            {/* Size comparison */}
             {outputBlob && (
-              <div className="flex items-center gap-4 border border-border bg-card px-4 py-2 text-sm">
+              <div className="flex flex-wrap items-center gap-4 border border-border bg-card px-4 py-2 text-sm">
                 <span className="text-muted-foreground">
-                  {formatBytes(fileSize)} → {formatBytes(outputSize)}
+                  {formatBytes(fileSize)} &rarr; {formatBytes(outputSize)}
                 </span>
                 <span
                   className={cn(
@@ -765,9 +743,7 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
                         : "text-red-400",
                     )}
                   >
-                    {outputSize <= 10 * 1024 * 1024
-                      ? "Discord OK"
-                      : "Discord: too large"}
+                    {outputSize <= 10 * 1024 * 1024 ? "Discord OK" : "Discord: too large"}
                   </span>
                 )}
               </div>
@@ -782,50 +758,26 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
                 {t(locale, "gifOptimizer.crop")}
               </legend>
               <div className="grid grid-cols-2 gap-2">
-                <label className="text-xs text-muted-foreground">
-                  X
-                  <input
-                    type="number"
-                    value={cropX}
-                    min={0}
-                    max={srcWidth}
-                    onChange={(e) => setCropX(Number(e.target.value))}
-                    className="mt-0.5 block w-full border border-border bg-background px-2 py-1 text-sm text-foreground"
-                  />
-                </label>
-                <label className="text-xs text-muted-foreground">
-                  Y
-                  <input
-                    type="number"
-                    value={cropY}
-                    min={0}
-                    max={srcHeight}
-                    onChange={(e) => setCropY(Number(e.target.value))}
-                    className="mt-0.5 block w-full border border-border bg-background px-2 py-1 text-sm text-foreground"
-                  />
-                </label>
-                <label className="text-xs text-muted-foreground">
-                  W
-                  <input
-                    type="number"
-                    value={cropW}
-                    min={1}
-                    max={srcWidth}
-                    onChange={(e) => setCropW(Number(e.target.value))}
-                    className="mt-0.5 block w-full border border-border bg-background px-2 py-1 text-sm text-foreground"
-                  />
-                </label>
-                <label className="text-xs text-muted-foreground">
-                  H
-                  <input
-                    type="number"
-                    value={cropH}
-                    min={1}
-                    max={srcHeight}
-                    onChange={(e) => setCropH(Number(e.target.value))}
-                    className="mt-0.5 block w-full border border-border bg-background px-2 py-1 text-sm text-foreground"
-                  />
-                </label>
+                {(
+                  [
+                    ["X", cropX, setCropX, 0, srcWidth],
+                    ["Y", cropY, setCropY, 0, srcHeight],
+                    ["W", cropW, setCropW, 1, srcWidth],
+                    ["H", cropH, setCropH, 1, srcHeight],
+                  ] as const
+                ).map(([label, val, setter, min, max]) => (
+                  <label key={label} className="text-xs text-muted-foreground">
+                    {label}
+                    <input
+                      type="number"
+                      value={val}
+                      min={min}
+                      max={max}
+                      onChange={(e) => setter(Number(e.target.value))}
+                      className="mt-0.5 block w-full border border-border bg-background px-2 py-1 text-sm text-foreground"
+                    />
+                  </label>
+                ))}
               </div>
               <button
                 onClick={() => {
@@ -886,7 +838,6 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
               <legend className="px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {t(locale, "gifOptimizer.optimization")}
               </legend>
-
               <label className="text-xs text-muted-foreground">
                 {t(locale, "gifOptimizer.compressionPower")}: {compression}%
                 <input
@@ -899,7 +850,6 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
                   className="mt-1 block w-full accent-primary"
                 />
               </label>
-
               <label className="mt-3 text-xs text-muted-foreground">
                 {t(locale, "gifOptimizer.frameSkip")}
                 <select
@@ -914,7 +864,6 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
                   <option value={4}>{t(locale, "gifOptimizer.skipEvery4")}</option>
                 </select>
               </label>
-
               <label className="mt-3 flex items-center gap-2 text-xs text-primary">
                 <input
                   type="checkbox"
@@ -933,36 +882,15 @@ export default function GifOptimizer({ locale }: { locale: Locale }) {
 
             {/* Actions */}
             <div className="space-y-2">
-              <button
-                onClick={processGif}
-                disabled={busy || srcFrames.length === 0}
-                className={cn(
-                  "flex w-full items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors",
-                  busy
-                    ? "cursor-not-allowed bg-muted text-muted-foreground"
-                    : "bg-primary text-primary-foreground hover:bg-primary/90",
-                )}
-              >
-                {phase === "processing" ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    {t(locale, "gifOptimizer.processing")}
-                  </>
-                ) : (
-                  t(locale, "gifOptimizer.optimize")
-                )}
-              </button>
-
               {outputBlob && (
                 <button
                   onClick={downloadOutput}
-                  className="flex w-full items-center justify-center gap-2 border border-primary bg-transparent px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+                  className="flex w-full items-center justify-center gap-2 bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                 >
                   <Download className="h-4 w-4" />
                   {t(locale, "gifOptimizer.download")}
                 </button>
               )}
-
               <button
                 onClick={reset}
                 className="flex w-full items-center justify-center gap-2 px-4 py-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
