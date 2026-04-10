@@ -126,6 +126,9 @@ async function decodeWithImg(
 
 // ── GIF Encoder (using gif.js) ──────────────────────────────
 
+// @ts-expect-error gif.js has no type declarations
+import GIF from "gif.js";
+
 async function encodeGif(
   frames: GifFrame[],
   width: number,
@@ -135,16 +138,13 @@ async function encodeGif(
     quality?: number;
   },
 ): Promise<Blob> {
-  // Dynamic import gif.js from CDN
-  const GIF = await loadGifJs();
-
   return new Promise((resolve, reject) => {
     const gif = new GIF({
       workers: Math.min(navigator.hardwareConcurrency || 2, 4),
       quality: opts.quality ?? 10,
       width,
       height,
-      workerScript: getGifWorkerUrl(),
+      workerScript: "/gif.worker.js",
     });
 
     const canvas = document.createElement("canvas");
@@ -160,31 +160,6 @@ async function encodeGif(
     gif.on("finished", (blob: Blob) => resolve(blob));
     gif.on("error", (err: Error) => reject(err));
     gif.render();
-  });
-}
-
-let gifJsLoaded: any = null;
-let gifWorkerBlobUrl: string | null = null;
-
-function getGifWorkerUrl(): string {
-  if (gifWorkerBlobUrl) return gifWorkerBlobUrl;
-  // gif.js.optimized worker is bundled inline
-  return "https://cdn.jsdelivr.net/npm/gif.js.optimized@1.0.1/dist/gif.worker.js";
-}
-
-async function loadGifJs(): Promise<any> {
-  if (gifJsLoaded) return gifJsLoaded;
-
-  return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src =
-      "https://cdn.jsdelivr.net/npm/gif.js.optimized@1.0.1/dist/gif.js";
-    script.onload = () => {
-      gifJsLoaded = (window as any).GIF;
-      resolve(gifJsLoaded);
-    };
-    script.onerror = () => reject(new Error("Failed to load gif.js"));
-    document.head.appendChild(script);
   });
 }
 
