@@ -56,6 +56,11 @@ const categories: Category[] = [
         url: "https://www.eraser.io/",
         description: "Documents & diagrams editor.",
       },
+      {
+        name: "FreeCut",
+        url: "https://www.freecut.net/",
+        description: "Browser-based video editor with multi-track timeline and keyframes.",
+      },
     ],
   },
 ];
