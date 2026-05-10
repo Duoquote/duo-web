@@ -12,8 +12,6 @@ import {
   X,
   Check,
   AlertTriangle,
-  SplitSquareHorizontal,
-  Columns2,
   Maximize2,
 } from "lucide-react";
 import {
@@ -33,7 +31,6 @@ import type {
 } from "../../lib/image-compress/types";
 
 type Phase = "idle" | "loading" | "ready" | "error";
-type CompareMode = "side" | "slider";
 
 const ACCEPT = "image/png,image/jpeg,image/webp,image/avif,image/gif,image/bmp";
 
@@ -96,9 +93,10 @@ export default function ImageCompress({ locale }: { locale: Locale }) {
 
   const [results, setResults] = useState<Record<string, PresetResult>>({});
   const [selectedId, setSelectedId] = useState<string>("mozjpeg-q80");
-  const [mode, setMode] = useState<CompareMode>("side");
   const [sliderPos, setSliderPos] = useState(50);
   const [scale, setScale] = useState(1);
+  const seamContainerRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
 
   const poolRef = useRef<CompressPool | null>(null);
   const srcImageDataRef = useRef<ImageData | null>(null);
@@ -459,37 +457,6 @@ export default function ImageCompress({ locale }: { locale: Locale }) {
       <div className="flex flex-wrap items-center gap-2 border border-border bg-card px-3 py-2 text-sm">
         <div className="flex items-center gap-1">
           <button
-            onClick={() => setMode("side")}
-            className={cn(
-              "flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors",
-              mode === "side"
-                ? "bg-primary/20 text-primary"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-            aria-label={t(locale, "imageCompress.modeSide")}
-          >
-            <Columns2 className="h-3.5 w-3.5" />
-            {t(locale, "imageCompress.modeSide")}
-          </button>
-          <button
-            onClick={() => setMode("slider")}
-            className={cn(
-              "flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors",
-              mode === "slider"
-                ? "bg-primary/20 text-primary"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-            aria-label={t(locale, "imageCompress.modeSlider")}
-          >
-            <SplitSquareHorizontal className="h-3.5 w-3.5" />
-            {t(locale, "imageCompress.modeSlider")}
-          </button>
-        </div>
-
-        <div className="mx-1 h-4 w-px bg-border" />
-
-        <div className="flex items-center gap-1">
-          <button
             onClick={fitView}
             className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
           >
@@ -545,103 +512,99 @@ export default function ImageCompress({ locale }: { locale: Locale }) {
             centerOnInit
             wheel={{ step: 0.15 }}
             doubleClick={{ disabled: true }}
+            panning={{ excluded: ["seam-handle"] }}
             onTransformed={(_, state) => setScale(state.scale)}
           >
             <TransformComponent
               wrapperStyle={{ width: "100%", height: "100%" }}
               contentStyle={{ display: "block" }}
             >
-              {mode === "side" ? (
-                <div className="flex items-start gap-px">
-                  <div className="relative">
-                    <img
-                      src={srcUrl}
-                      alt="Original"
-                      style={{
-                        imageRendering: scale > 2 ? "pixelated" : "auto",
-                        display: "block",
-                      }}
-                    />
-                    <span className="pointer-events-none absolute left-1 top-1 bg-black/70 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white">
-                      {t(locale, "imageCompress.original")}
-                    </span>
-                  </div>
-                  <div className="relative">
-                    {compressedUrl ? (
-                      <img
-                        src={compressedUrl}
-                        alt="Compressed"
-                        style={{
-                          imageRendering: scale > 2 ? "pixelated" : "auto",
-                          display: "block",
-                        }}
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none";
-                        }}
-                      />
-                    ) : (
-                      <div
-                        style={{ width: srcDims.w, height: srcDims.h }}
-                        className="flex items-center justify-center bg-card"
-                      >
-                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                      </div>
-                    )}
-                    <span className="pointer-events-none absolute left-1 top-1 bg-primary/80 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-primary-foreground">
-                      {selectedPreset?.label}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  className="relative"
-                  style={{ width: srcDims.w, height: srcDims.h }}
-                >
+              <div
+                ref={seamContainerRef}
+                className="relative"
+                style={{ width: srcDims.w, height: srcDims.h }}
+              >
+                <img
+                  src={srcUrl}
+                  alt="Original"
+                  style={{
+                    imageRendering: scale > 2 ? "pixelated" : "auto",
+                    display: "block",
+                  }}
+                />
+                {compressedUrl && (
                   <img
-                    src={srcUrl}
-                    alt="Original"
+                    src={compressedUrl}
+                    alt="Compressed"
+                    className="absolute inset-0"
                     style={{
+                      clipPath: `inset(0 ${100 - sliderPos}% 0 0)`,
                       imageRendering: scale > 2 ? "pixelated" : "auto",
                       display: "block",
                     }}
                   />
-                  {compressedUrl && (
-                    <img
-                      src={compressedUrl}
-                      alt="Compressed"
-                      className="absolute inset-0"
-                      style={{
-                        clipPath: `inset(0 ${100 - sliderPos}% 0 0)`,
-                        imageRendering: scale > 2 ? "pixelated" : "auto",
-                        display: "block",
-                      }}
-                    />
-                  )}
-                </div>
-              )}
+                )}
+                {/* Seam line — draggable */}
+                <div
+                  className="seam-handle absolute top-0 bottom-0 z-10 cursor-ew-resize touch-none"
+                  style={{
+                    left: `${sliderPos}%`,
+                    width: `${Math.max(2, 3 / scale)}px`,
+                    marginLeft: `-${Math.max(2, 3 / scale) / 2}px`,
+                    background: "white",
+                    boxShadow: `0 0 0 ${Math.max(0.5, 1 / scale)}px rgba(0,0,0,0.6)`,
+                  }}
+                  onPointerDown={(e) => {
+                    if (!seamContainerRef.current) return;
+                    e.stopPropagation();
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                    draggingRef.current = true;
+                  }}
+                  onPointerMove={(e) => {
+                    if (!draggingRef.current) return;
+                    const c = seamContainerRef.current;
+                    if (!c) return;
+                    const rect = c.getBoundingClientRect();
+                    const pct =
+                      ((e.clientX - rect.left) / rect.width) * 100;
+                    setSliderPos(Math.max(0, Math.min(100, pct)));
+                  }}
+                  onPointerUp={(e) => {
+                    draggingRef.current = false;
+                    e.currentTarget.releasePointerCapture(e.pointerId);
+                  }}
+                />
+
+                {/* Labels */}
+                <span className="pointer-events-none absolute left-1 top-1 z-10 bg-black/70 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white">
+                  {t(locale, "imageCompress.original")}
+                </span>
+                <span className="pointer-events-none absolute right-1 top-1 z-10 bg-primary/80 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-primary-foreground">
+                  {selectedPreset?.label}
+                </span>
+              </div>
             </TransformComponent>
           </TransformWrapper>
         )}
 
-        {mode === "slider" && (
-          <div className="pointer-events-none absolute inset-x-3 bottom-3 z-10 flex items-center gap-2 rounded bg-black/50 px-2 py-1.5 backdrop-blur">
-            <span className="text-[10px] font-medium uppercase tracking-wider text-white/80">
-              {t(locale, "imageCompress.original")}
-            </span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={sliderPos}
-              onChange={(e) => setSliderPos(Number(e.target.value))}
-              className="pointer-events-auto flex-1 accent-primary"
-              aria-label="Slider position"
-            />
-            <span className="text-[10px] font-medium uppercase tracking-wider text-white/80">
-              {selectedPreset?.label || t(locale, "imageCompress.compressed")}
-            </span>
-          </div>
-        )}
+        {/* Bottom slider for fine control / fallback */}
+        <div className="pointer-events-none absolute inset-x-3 bottom-3 z-10 flex items-center gap-2 rounded bg-black/50 px-2 py-1.5 backdrop-blur">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-white/80">
+            {t(locale, "imageCompress.original")}
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={sliderPos}
+            onChange={(e) => setSliderPos(Number(e.target.value))}
+            className="pointer-events-auto flex-1 accent-primary"
+            aria-label="Slider position"
+          />
+          <span className="text-[10px] font-medium uppercase tracking-wider text-white/80">
+            {selectedPreset?.label || t(locale, "imageCompress.compressed")}
+          </span>
+        </div>
       </div>
 
       <button
