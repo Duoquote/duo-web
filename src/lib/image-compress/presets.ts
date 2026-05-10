@@ -98,7 +98,7 @@ export const PRESETS: Preset[] = [
     mime: "image/jxl",
     ext: "jxl",
     preservesAlpha: true,
-    options: { format: "jxl", quality: 88, effort: 7 },
+    options: { format: "jxl", quality: 88, effort: 6 },
   },
   {
     id: "jxl-q75",
@@ -107,7 +107,7 @@ export const PRESETS: Preset[] = [
     mime: "image/jxl",
     ext: "jxl",
     preservesAlpha: true,
-    options: { format: "jxl", quality: 75, effort: 7 },
+    options: { format: "jxl", quality: 75, effort: 6 },
   },
   {
     id: "png-oxi",

@@ -104,6 +104,7 @@ export default function ImageCompress({ locale }: { locale: Locale }) {
   const objectUrlsRef = useRef<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
+  const sessionRef = useRef(0);
 
   // ── Pool lifecycle ─────────────────────────────────────────
 
@@ -121,7 +122,7 @@ export default function ImageCompress({ locale }: { locale: Locale }) {
   // ── Encode dispatch ────────────────────────────────────────
 
   const runPreset = useCallback(
-    async (presetId: string) => {
+    async (presetId: string, session: number) => {
       const preset = PRESET_BY_ID[presetId];
       const pool = poolRef.current;
       if (!preset || !pool) return;
@@ -131,14 +132,10 @@ export default function ImageCompress({ locale }: { locale: Locale }) {
         : compositedSrcRef.current ?? srcImageDataRef.current;
       if (!src) return;
 
-      setResults((prev) => ({
-        ...prev,
-        [presetId]: { presetId, status: "encoding" },
-      }));
-
       const start = performance.now();
       try {
         const bytes = await pool.encode(preset.options, src);
+        if (sessionRef.current !== session) return;
         const blob = new Blob([bytes], { type: preset.mime });
         const url = URL.createObjectURL(blob);
         objectUrlsRef.current.push(url);
@@ -153,7 +150,11 @@ export default function ImageCompress({ locale }: { locale: Locale }) {
           },
         }));
       } catch (e) {
-        const message = e instanceof Error ? e.message : String(e);
+        if (sessionRef.current !== session) return;
+        const raw = e instanceof Error ? e.message : String(e);
+        const message = /Aborted/i.test(raw)
+          ? `${preset.format} encoder ran out of memory or aborted`
+          : raw;
         setResults((prev) => ({
           ...prev,
           [presetId]: { presetId, status: "error", error: message },
@@ -167,11 +168,11 @@ export default function ImageCompress({ locale }: { locale: Locale }) {
 
   const loadFile = useCallback(
     async (file: File) => {
+      const session = ++sessionRef.current;
       setPhase("loading");
       setError("");
       setFileName(file.name);
       setFileSize(file.size);
-      setResults({});
 
       // Revoke previous URLs
       objectUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
@@ -179,6 +180,7 @@ export default function ImageCompress({ locale }: { locale: Locale }) {
 
       try {
         const imageData = await decodeFile(file);
+        if (sessionRef.current !== session) return;
         srcImageDataRef.current = imageData;
         const alphaInfo = detectAlpha(imageData);
         setAlpha(alphaInfo);
@@ -193,13 +195,21 @@ export default function ImageCompress({ locale }: { locale: Locale }) {
 
         const recommended = pickRecommended(alphaInfo);
         setSelectedId(recommended);
+        // Reset results AFTER decode (so the dropzone keeps the previous
+        // results visible during loading) and seed pending statuses.
+        setResults(
+          Object.fromEntries(
+            PRESETS.map((p) => [p.id, { presetId: p.id, status: "encoding" }]),
+          ),
+        );
         setPhase("ready");
 
         // Dispatch all presets in parallel — pool queues them
         for (const preset of PRESETS) {
-          runPreset(preset.id);
+          runPreset(preset.id, session);
         }
       } catch (e) {
+        if (sessionRef.current !== session) return;
         const message = e instanceof Error ? e.message : String(e);
         setError(message || t(locale, "imageCompress.errorDecode"));
         setPhase("error");
@@ -234,6 +244,7 @@ export default function ImageCompress({ locale }: { locale: Locale }) {
   // ── Reset ──────────────────────────────────────────────────
 
   const reset = useCallback(() => {
+    sessionRef.current++;
     objectUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
     objectUrlsRef.current = [];
     srcImageDataRef.current = null;
@@ -277,7 +288,26 @@ export default function ImageCompress({ locale }: { locale: Locale }) {
   const compressedUrl =
     selectedResult?.status === "done" ? selectedResult.url : "";
 
-  const sortedPresets = useMemo(() => PRESETS, []);
+  const sortedPresets = useMemo(() => {
+    const indexOf = new Map(PRESETS.map((p, i) => [p.id, i]));
+    const bucket = (id: string): number => {
+      const r = results[id];
+      if (r?.status === "done") return 0;
+      if (r?.status === "error") return 2;
+      return 1;
+    };
+    return [...PRESETS].sort((a, b) => {
+      const ba = bucket(a.id);
+      const bb = bucket(b.id);
+      if (ba !== bb) return ba - bb;
+      if (ba === 0) {
+        const sa = results[a.id]?.size ?? 0;
+        const sb = results[b.id]?.size ?? 0;
+        if (sa !== sb) return sa - sb;
+      }
+      return (indexOf.get(a.id) ?? 0) - (indexOf.get(b.id) ?? 0);
+    });
+  }, [results]);
 
   const alphaBadge = useMemo(() => {
     if (!alpha) return null;
