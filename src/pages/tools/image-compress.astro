@@ -1,0 +1,36 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import GridBackground from "../../components/GridBackground";
+import Header from "../../components/Header";
+import ImageCompress from "../../components/tools/ImageCompress";
+import { t, getLocalizedPath } from "../../lib/i18n";
+
+const locale = "en" as const;
+---
+
+<Layout
+  title={t(locale, "seo.imageCompress.title")}
+  description={t(locale, "seo.imageCompress.description")}
+  locale={locale}
+>
+  <GridBackground client:load />
+  <Header client:load locale={locale} />
+  <main class="relative z-10 mx-auto max-w-6xl px-4 pt-20 pb-16 md:px-6">
+    <a
+      href={getLocalizedPath(locale, "/tools")}
+      class="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+    >
+      {t(locale, "imageCompress.backToTools")}
+    </a>
+    <h1 class="mb-2 text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+      {t(locale, "imageCompress.heading")}
+    </h1>
+    <p class="mb-6 text-sm text-muted-foreground">
+      {t(locale, "imageCompress.description")}
+    </p>
+    <ImageCompress client:only="react" locale={locale} />
+    <p class="mt-6 text-xs text-muted-foreground/50">
+      Powered by <a href="https://github.com/jamsinclair/jSquash" class="underline hover:text-muted-foreground" target="_blank" rel="noopener noreferrer">jSquash</a> (MozJPEG, libwebp, libavif, libjxl, OxiPNG) &middot; inspired by <a href="https://squoosh.app" class="underline hover:text-muted-foreground" target="_blank" rel="noopener noreferrer">Squoosh</a>
+    </p>
+  </main>
+</Layout>

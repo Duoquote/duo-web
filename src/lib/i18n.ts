@@ -62,6 +62,11 @@ const translations = {
     "tools.gifOptimizer.description":
       "Crop, resize, and compress GIF animations in your browser.",
 
+    // Image Compress tool listing
+    "tools.imageCompress.name": "Image Compress",
+    "tools.imageCompress.description":
+      "Compare 13 compression presets side-by-side. MozJPEG, WebP, AVIF, JXL, PNG.",
+
     // H3 Explorer
     "h3.backToTools": "← Back to tools",
     "h3.heading": "H3 Explorer",
@@ -212,6 +217,40 @@ const translations = {
     "gifOptimizer.loadAnother": "Load another GIF",
     "gifOptimizer.previewHint": "Click Optimize to preview",
 
+    // GIF Optimizer
+    // (keys above)
+
+    // Image Compress
+    "imageCompress.backToTools": "← Back to tools",
+    "imageCompress.heading": "Image Compress",
+    "imageCompress.description":
+      "Compare 13 compression presets side-by-side at any zoom level. All encoding runs in your browser via WebAssembly — MozJPEG, WebP, AVIF, JPEG XL, and OxiPNG.",
+    "imageCompress.dropzone": "Drop an image here or click to browse",
+    "imageCompress.dropzoneActive": "Drop it!",
+    "imageCompress.errorFormat": "Please select an image file",
+    "imageCompress.errorDecode": "Failed to decode image",
+    "imageCompress.original": "Original",
+    "imageCompress.compressed": "Compressed",
+    "imageCompress.alpha.opaque": "Opaque",
+    "imageCompress.alpha.binary": "Has transparency",
+    "imageCompress.alpha.smooth": "Smooth alpha",
+    "imageCompress.alpha.dropsAlpha": "Drops alpha",
+    "imageCompress.encoding": "Encoding...",
+    "imageCompress.smaller": "smaller",
+    "imageCompress.larger": "larger",
+    "imageCompress.recommended": "Recommended",
+    "imageCompress.modeSide": "Side-by-side",
+    "imageCompress.modeSlider": "Slider",
+    "imageCompress.zoomFit": "Fit",
+    "imageCompress.download": "Download",
+    "imageCompress.loadAnother": "Load another image",
+
+    // SEO — Image Compress
+    "seo.imageCompress.title":
+      "Image Compress — MozJPEG, WebP, AVIF & JXL Side-by-Side in Your Browser",
+    "seo.imageCompress.description":
+      "Free online image compressor. Compare 13 presets (MozJPEG, WebP, AVIF, JPEG XL, OxiPNG) side-by-side at any zoom level. All processing in your browser, no upload required.",
+
     // SEO — GIF Optimizer
     "seo.gifOptimizer.title":
       "GIF Optimizer — Crop, Resize & Compress GIFs in Your Browser",
@@ -348,6 +387,11 @@ const translations = {
     "tools.gifOptimizer.name": "GIF Optimize Edici",
     "tools.gifOptimizer.description":
       "GIF animasyonlarını tarayıcınızda kırpın, boyutlandırın ve sıkıştırın.",
+
+    // Image Compress tool listing
+    "tools.imageCompress.name": "Görsel Sıkıştırıcı",
+    "tools.imageCompress.description":
+      "13 sıkıştırma ön ayarını yan yana karşılaştırın. MozJPEG, WebP, AVIF, JXL, PNG.",
 
     // H3 Explorer
     "h3.backToTools": "← Araçlara dön",
@@ -500,6 +544,37 @@ const translations = {
     "gifOptimizer.download": "İndir",
     "gifOptimizer.loadAnother": "Başka bir GIF yükle",
     "gifOptimizer.previewHint": "Önizleme için Optimize Et'e tıklayın",
+
+    // Image Compress
+    "imageCompress.backToTools": "← Araçlara dön",
+    "imageCompress.heading": "Görsel Sıkıştırıcı",
+    "imageCompress.description":
+      "13 sıkıştırma ön ayarını her yakınlaştırma seviyesinde yan yana karşılaştırın. Tüm kodlama tarayıcınızda WebAssembly ile çalışır — MozJPEG, WebP, AVIF, JPEG XL ve OxiPNG.",
+    "imageCompress.dropzone": "Bir görsel sürükleyin veya tıklayıp seçin",
+    "imageCompress.dropzoneActive": "Bırakın!",
+    "imageCompress.errorFormat": "Lütfen bir görsel dosyası seçin",
+    "imageCompress.errorDecode": "Görsel çözümlenemedi",
+    "imageCompress.original": "Orijinal",
+    "imageCompress.compressed": "Sıkıştırılmış",
+    "imageCompress.alpha.opaque": "Şeffaflık yok",
+    "imageCompress.alpha.binary": "Şeffaflık var",
+    "imageCompress.alpha.smooth": "Yumuşak alfa",
+    "imageCompress.alpha.dropsAlpha": "Alfa kaybolur",
+    "imageCompress.encoding": "Kodlanıyor...",
+    "imageCompress.smaller": "küçük",
+    "imageCompress.larger": "büyük",
+    "imageCompress.recommended": "Önerilen",
+    "imageCompress.modeSide": "Yan yana",
+    "imageCompress.modeSlider": "Kaydırıcı",
+    "imageCompress.zoomFit": "Sığdır",
+    "imageCompress.download": "İndir",
+    "imageCompress.loadAnother": "Başka bir görsel yükle",
+
+    // SEO — Image Compress
+    "seo.imageCompress.title":
+      "Görsel Sıkıştırıcı — MozJPEG, WebP, AVIF ve JXL Tarayıcınızda Yan Yana",
+    "seo.imageCompress.description":
+      "Ücretsiz çevrimiçi görsel sıkıştırıcı. 13 ön ayarı (MozJPEG, WebP, AVIF, JPEG XL, OxiPNG) her yakınlaştırma seviyesinde yan yana karşılaştırın. Tüm işlemler tarayıcınızda, yükleme gerekmez.",
 
     // SEO — GIF Optimizer
     "seo.gifOptimizer.title":
