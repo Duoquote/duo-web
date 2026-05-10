@@ -106,10 +106,18 @@ export async function aiDenoise(
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let ortModule: any = null;
 
+// Load onnxruntime-web WASM binaries from a CDN rather than the local bundle.
+// The bundled .wasm exceeds Cloudflare Pages' 25 MiB per-file limit.
+const ORT_VERSION = "1.24.3";
+const ORT_WASM_BASE = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT_VERSION}/dist/`;
+
 async function importOrt() {
   if (ortModule) return ortModule;
   try {
     ortModule = await import("onnxruntime-web");
+    if (ortModule?.env?.wasm) {
+      ortModule.env.wasm.wasmPaths = ORT_WASM_BASE;
+    }
     return ortModule;
   } catch {
     return null;
