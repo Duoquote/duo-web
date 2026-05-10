@@ -1,6 +1,7 @@
 ---
 import { ViewTransitions } from "astro:transitions";
 import { t, getLocalizedPath, type Locale } from "../lib/i18n";
+import { COMMIT_SHORT, COMMIT_URL, BUILD_TIME, BRANCH } from "../lib/build-info";
 import "../styles/globals.css";
 
 interface Props {
@@ -120,5 +121,15 @@ const jsonLd = {
   </head>
   <body>
     <slot />
+    <a
+      href={COMMIT_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={`Built ${BUILD_TIME}${BRANCH ? ` · ${BRANCH}` : ""}`}
+      class="fixed bottom-2 right-2 z-50 font-mono text-[10px] tracking-wider text-muted-foreground/30 transition-colors hover:text-muted-foreground"
+      transition:persist
+    >
+      {COMMIT_SHORT}
+    </a>
   </body>
 </html>
