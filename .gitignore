@@ -6,3 +6,4 @@ dist/
 !.env.example
 wasm/geo-parser/target/
 wasm/imvector/target/
+.analysis/
