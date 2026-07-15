@@ -322,6 +322,23 @@ const translations = {
     // Language switcher
     "lang.switch": "TR",
     "lang.switchLabel": "Türkçe",
+
+    // Retro (2005) mode
+    "retro.enter": "Time-travel to 2005",
+    "retro.exit": "Return to the present",
+    "retro.marquee":
+      "★·.·´¯`·.·★ WELCOME 2 MY H0MEPAGE ★·.·´¯`·.·★ this site is best viewed in Internet Explorer 6 at 800x600 ★ dont forget 2 sign my guestbook ★ made with Notepad & luv ★ ur the coolest visitor ★ no popups i promise ;) ★",
+    "retro.underConstruction": "This page is UNDER CONSTRUCTION!!",
+    "retro.visitors": "You are visitor #",
+    "retro.controlPanel": "GuvenNet 2005™",
+    "retro.signGuestbook": "Sign my guestbook!",
+    "retro.webringPrev": "« Prev",
+    "retro.webringRandom": "Random",
+    "retro.webringNext": "Next »",
+    "retro.popupTitle": "CONGRATULATIONS!!!",
+    "retro.popupBody": "You are the 1,000,000th visitor!! Click OK to claim your FREE iPod Nano!",
+    "retro.popupOk": "Claim Prize",
+    "retro.popupClose": "No thanks",
   },
   tr: {
     // Nav
@@ -645,6 +662,23 @@ const translations = {
     // Language switcher
     "lang.switch": "EN",
     "lang.switchLabel": "English",
+
+    // Retro (2005) mode
+    "retro.enter": "2005 yılına ışınlan",
+    "retro.exit": "Günümüze geri dön",
+    "retro.marquee":
+      "★·.·´¯`·.·★ SİTEME HOŞ GELDİN ★·.·´¯`·.·★ bu site en iyi Internet Explorer 6 ile 800x600 çözünürlükte görüntülenir ★ ziyaretçi defterimi imzalamayı unutma ★ Not Defteri ile sevgiyle yapıldı ★ sen en havalı ziyaretçisin ★ pop-up yok söz veriyorum ;) ★",
+    "retro.underConstruction": "Bu sayfa YAPIM AŞAMASINDA!!",
+    "retro.visitors": "Sen ziyaretçi #",
+    "retro.controlPanel": "GuvenNet 2005™",
+    "retro.signGuestbook": "Ziyaretçi defterimi imzala!",
+    "retro.webringPrev": "« Önceki",
+    "retro.webringRandom": "Rastgele",
+    "retro.webringNext": "Sonraki »",
+    "retro.popupTitle": "TEBRİKLER!!!",
+    "retro.popupBody": "1.000.000. ziyaretçisin!! ÜCRETSİZ iPod Nano kazanmak için TAMAM'a bas!",
+    "retro.popupOk": "Ödülü Al",
+    "retro.popupClose": "Hayır teşekkürler",
   },
 } as const;
 

@@ -7,12 +7,19 @@ function getIsDark() {
   return document.documentElement.classList.contains("dark");
 }
 
+function getIsRetro() {
+  if (typeof document === "undefined") return false;
+  return document.documentElement.classList.contains("retro");
+}
+
 export default function Header({ locale = "en" }: { locale?: Locale }) {
   const [dark, setDark] = useState(getIsDark);
+  const [retro, setRetro] = useState(getIsRetro);
 
   useEffect(() => {
     // Sync state if the inline script already set the class
     setDark(getIsDark());
+    setRetro(getIsRetro());
   }, []);
 
   function toggleTheme() {
@@ -20,6 +27,15 @@ export default function Header({ locale = "en" }: { locale?: Locale }) {
     setDark(next);
     document.documentElement.classList.toggle("dark", next);
     localStorage.setItem("theme", next ? "dark" : "light");
+  }
+
+  function toggleRetro() {
+    const next = !retro;
+    setRetro(next);
+    document.documentElement.classList.toggle("retro", next);
+    localStorage.setItem("retro", next ? "1" : "0");
+    // let <RetroDecor /> know without a full reload
+    window.dispatchEvent(new Event("retrochange"));
   }
 
   const navItems = [
@@ -77,6 +93,14 @@ export default function Header({ locale = "en" }: { locale?: Locale }) {
             aria-label="Toggle theme"
           >
             {dark ? <Sun size={14} /> : <Moon size={14} />}
+          </button>
+          <button
+            onClick={toggleRetro}
+            className="retro-toggle px-2 py-1 text-[11px] font-bold tracking-wide text-muted-foreground border border-border transition-colors hover:text-foreground hover:border-primary/30 cursor-pointer"
+            title={t(locale, retro ? "retro.exit" : "retro.enter")}
+            aria-pressed={retro}
+          >
+            2005
           </button>
           <a
             href={switchPath}

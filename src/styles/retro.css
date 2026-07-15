@@ -1,0 +1,345 @@
+/* ======================================================================
+   2005 MODE — the whole site, reskinned as a low-effort GeoCities page.
+   Everything is scoped under html.retro so it's a pure add-on: flip the
+   class and the modern design is buried under Comic Sans and tiled GIFs.
+   High-specificity + !important on purpose — we're overriding Tailwind
+   utility classes everywhere without touching each component.
+   ====================================================================== */
+
+/* ---- base typography + page background -------------------------------- */
+html.retro,
+html.retro body {
+  font-family: "Comic Sans MS", "Comic Sans", "Chalkboard SE", cursive !important;
+  color: #ffff00 !important;
+  scrollbar-color: #ff00ff #000080;
+}
+
+html.retro body {
+  background: #0b0822 url("/retro/stars.gif") repeat !important;
+  cursor: crosshair;
+}
+
+/* nuke the modern grid/glow background */
+html.retro [data-grid-bg] {
+  display: none !important;
+}
+
+/* kill all the tasteful modern touches */
+html.retro *,
+html.retro *::before,
+html.retro *::after {
+  border-radius: 0 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  transition: none !important;
+}
+
+/* default body copy: bright + a touch too big */
+html.retro p,
+html.retro span,
+html.retro li,
+html.retro div {
+  color: #00ff00;
+}
+html.retro .text-muted-foreground,
+html.retro .text-muted-foreground\/60,
+html.retro .text-muted-foreground\/30 {
+  color: #00ffff !important;
+}
+
+/* ---- headings: rainbow, wobbly, oversized ----------------------------- */
+html.retro h1,
+html.retro h2,
+html.retro h3 {
+  font-weight: 700 !important;
+  background: linear-gradient(90deg, #ff0000, #ff9900, #ffff00, #00ff00, #00ffff, #ff00ff, #ff0000);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent !important;
+  animation: retro-rainbow 4s linear infinite, retro-tilt 6s ease-in-out infinite;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* ---- links: blue, underlined, purple when visited --------------------- */
+html.retro a,
+html.retro a:link {
+  color: #1a1aff !important;
+  text-decoration: underline !important;
+  cursor: pointer;
+}
+html.retro a:visited {
+  color: #800080 !important;
+}
+html.retro a:hover {
+  color: #ff0000 !important;
+  background: #ffff00;
+  text-decoration: underline overline !important;
+}
+
+/* ---- panels: everything "background/card/popover" becomes a Win95 box -- */
+html.retro .bg-background,
+html.retro .bg-background\/80,
+html.retro .bg-background\/70,
+html.retro .bg-card,
+html.retro .bg-popover,
+html.retro .bg-secondary,
+html.retro .bg-muted,
+html.retro .bg-primary\/5 {
+  background: #c0c0c0 !important;
+  color: #000080 !important;
+  border: 3px ridge #dfdfdf !important;
+}
+html.retro .bg-card *,
+html.retro .bg-background *:not(a) {
+  color: #000080;
+}
+
+/* the fixed header becomes a beveled toolbar */
+html.retro header {
+  background: #c0c0c0 !important;
+  border-bottom: 4px ridge #ffffff !important;
+}
+html.retro header span,
+html.retro header .text-foreground {
+  color: #000080 !important;
+}
+
+/* accents that were tasteful red -> hot pink / lime chaos */
+html.retro .text-primary,
+html.retro .text-primary\/70,
+html.retro .text-foreground {
+  color: #ff00ff !important;
+}
+html.retro .border-primary\/20,
+html.retro .border-border,
+html.retro .border-border\/50 {
+  border-color: #ff00ff !important;
+}
+
+/* ---- buttons + button-like links: chunky beveled 3D -------------------- */
+html.retro button,
+html.retro .bg-primary,
+html.retro a.bg-primary,
+html.retro a.inline-flex,
+html.retro .bg-\[\#24292e\],
+html.retro .bg-\[\#0a66c2\] {
+  background: #c0c0c0 !important;
+  color: #000080 !important;
+  border-top: 3px solid #ffffff !important;
+  border-left: 3px solid #ffffff !important;
+  border-right: 3px solid #404040 !important;
+  border-bottom: 3px solid #404040 !important;
+  font-weight: 700 !important;
+  text-decoration: none !important;
+}
+html.retro button:active,
+html.retro .bg-primary:active {
+  border-top: 3px solid #404040 !important;
+  border-left: 3px solid #404040 !important;
+  border-right: 3px solid #ffffff !important;
+  border-bottom: 3px solid #ffffff !important;
+}
+html.retro button:hover,
+html.retro .bg-primary:hover {
+  background: #d4d0c8 !important;
+}
+
+/* form controls */
+html.retro input,
+html.retro select,
+html.retro textarea {
+  background: #ffffff !important;
+  color: #000080 !important;
+  border: 2px inset #808080 !important;
+  font-family: "Courier New", monospace !important;
+}
+
+/* images get the classic hard blue border */
+html.retro main img {
+  border: 3px double #ff00ff !important;
+  image-rendering: auto;
+}
+
+/* the little commit-hash link bottom-right */
+html.retro a[title^="Built"] {
+  color: #00ff00 !important;
+  background: #000080;
+  padding: 2px 4px;
+}
+
+/* ======================================================================
+   Decorative bits used by <RetroDecor /> and animated helper classes
+   ====================================================================== */
+@keyframes retro-rainbow {
+  to { background-position: 200% center; }
+}
+@keyframes retro-tilt {
+  0%, 100% { transform: rotate(-1.5deg); }
+  50% { transform: rotate(1.5deg); }
+}
+@keyframes retro-blink {
+  0%, 49% { visibility: visible; }
+  50%, 100% { visibility: hidden; }
+}
+@keyframes retro-marquee {
+  from { transform: translateX(100%); }
+  to { transform: translateX(-100%); }
+}
+@keyframes retro-jiggle {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-4px) rotate(4deg); }
+}
+@keyframes retro-spin {
+  to { transform: rotate(360deg); }
+}
+
+.retro-blink { animation: retro-blink 1s steps(1) infinite; }
+.retro-spin { animation: retro-spin 4s linear infinite; display: inline-block; }
+.retro-jiggle { animation: retro-jiggle 1.2s ease-in-out infinite; display: inline-block; }
+.retro-rainbow-text {
+  background: linear-gradient(90deg, #ff0000, #ff9900, #ffff00, #00ff00, #00ffff, #ff00ff, #ff0000);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: retro-rainbow 3s linear infinite;
+}
+
+/* top scrolling welcome banner */
+.retro-marquee-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 26px;
+  z-index: 60;
+  background: #000080;
+  border-bottom: 2px solid #ffff00;
+  overflow: hidden;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  font-family: "Comic Sans MS", cursive;
+  font-weight: 700;
+  font-size: 14px;
+}
+.retro-marquee-bar > span {
+  display: inline-block;
+  padding-left: 100%;
+  animation: retro-marquee 22s linear infinite;
+  color: #00ff00;
+}
+/* push the fixed site header below the marquee when retro is on */
+html.retro header { top: 26px !important; }
+
+/* a floating corner sticker (flames / construction / badges) */
+.retro-sticker {
+  position: fixed;
+  z-index: 55;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+/* the "control panel" box RetroDecor drops into the bottom-left */
+.retro-panel {
+  position: fixed;
+  bottom: 8px;
+  left: 8px;
+  z-index: 58;
+  width: 190px;
+  background: #c0c0c0;
+  border: 3px outset #ffffff;
+  padding: 4px;
+  font-family: "MS Sans Serif", "Comic Sans MS", sans-serif;
+  font-size: 11px;
+  color: #000080;
+}
+.retro-panel .retro-panel-title {
+  background: linear-gradient(90deg, #000080, #1084d0);
+  color: #fff;
+  font-weight: 700;
+  padding: 2px 4px;
+  margin: -4px -4px 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.retro-panel .retro-panel-title button {
+  all: unset;
+  cursor: pointer;
+  background: #c0c0c0;
+  border: 2px outset #fff;
+  color: #000;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0 4px;
+}
+.retro-counter {
+  font-family: "Courier New", monospace;
+  background: #000;
+  color: #00ff00;
+  border: 2px inset #808080;
+  padding: 2px 4px;
+  letter-spacing: 3px;
+  font-weight: 700;
+  display: inline-block;
+}
+.retro-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 4px;
+}
+.retro-badge88 {
+  width: 88px;
+  height: 31px;
+  font-size: 8px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-weight: 700;
+  border: 1px solid #000;
+  font-family: "MS Sans Serif", monospace;
+  padding: 1px;
+}
+.retro-webring {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 11px;
+}
+.retro-webring a { margin: 0 2px; }
+
+/* cursor sparkle trail dots */
+.retro-sparkle {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  font-size: 16px;
+  transform: translate(-50%, -50%);
+  will-change: transform, opacity;
+}
+
+/* the header toggle button — styled in BOTH modes via its own classes */
+.retro-toggle {
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+html.retro .retro-toggle {
+  background: #ffff00 !important;
+  color: #ff0000 !important;
+  border: 2px outset #fff !important;
+  font-weight: 700 !important;
+  animation: retro-blink 1.4s steps(1) infinite;
+}
+
+@media (max-width: 640px) {
+  .retro-panel { display: none; }
+}

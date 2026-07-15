@@ -2,6 +2,7 @@
 import { ViewTransitions } from "astro:transitions";
 import { t, getLocalizedPath, type Locale } from "../lib/i18n";
 import { COMMIT_SHORT, COMMIT_URL, BUILD_TIME, BRANCH } from "../lib/build-info";
+import RetroDecor from "../components/RetroDecor";
 import "../styles/globals.css";
 
 interface Props {
@@ -69,6 +70,10 @@ const jsonLd = {
         var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         var isDark = stored === 'dark' || (!stored && prefersDark);
         document.documentElement.classList.toggle('dark', isDark);
+        // deep-linkable retro mode: ?retro=1 / ?retro=0
+        var q = new URLSearchParams(location.search).get('retro');
+        if (q === '1' || q === '0') localStorage.setItem('retro', q);
+        document.documentElement.classList.toggle('retro', localStorage.getItem('retro') === '1');
       }
       applyTheme();
       document.addEventListener('astro:after-swap', applyTheme);
@@ -120,6 +125,7 @@ const jsonLd = {
     <ViewTransitions />
   </head>
   <body>
+    <RetroDecor client:load locale={locale} />
     <slot />
     <a
       href={COMMIT_URL}

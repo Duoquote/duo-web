@@ -4,6 +4,7 @@
 @import "@fontsource/google-sans/500.css";
 @import "@fontsource/google-sans/600.css";
 @import "@fontsource/google-sans/700.css";
+@import "./retro.css";
 
 @custom-variant dark (&:is(.dark *));
 

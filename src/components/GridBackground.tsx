@@ -1,6 +1,6 @@
 export default function GridBackground() {
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden">
+    <div data-grid-bg className="fixed inset-0 -z-10 overflow-hidden">
       {/* Background image (filtered in light mode) */}
       <div
         className="absolute inset-0 bg-cover bg-center invert hue-rotate-180 dark:invert-0 dark:hue-rotate-0"
