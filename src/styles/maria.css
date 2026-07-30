@@ -99,7 +99,8 @@ body {
   inset: 0;
   z-index: 99;
   pointer-events: none;
-  background: radial-gradient(ellipse at center, transparent 45%, rgba(8, 9, 5, 0.72) 100%);
+  /* kept light — it should suggest a screen edge, not crush the corners */
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(8, 9, 5, 0.3) 100%);
 }
 
 @keyframes mz-scan {
