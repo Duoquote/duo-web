@@ -7,7 +7,8 @@ import topLevelAwait from "vite-plugin-top-level-await";
 
 export default defineConfig({
   site: "https://dq.ms",
-  integrations: [react(), sitemap()],
+  // /maria is a private page — keep it out of the sitemap so crawlers don't find it
+  integrations: [react(), sitemap({ filter: (page) => !page.includes("/maria") })],
   i18n: {
     defaultLocale: "en",
     locales: ["en", "tr"],

@@ -20,3 +20,16 @@
 
 /pp.jpg
   Cache-Control: public, max-age=86400
+
+# Private page. Belt-and-braces alongside the in-page noindex meta and the sitemap
+# exclusion; no-referrer keeps the path out of Referer when outbound links are clicked.
+/maria
+  X-Robots-Tag: noindex, nofollow, noarchive, nosnippet
+  Referrer-Policy: no-referrer
+
+/maria/*
+  X-Robots-Tag: noindex, nofollow, noarchive, nosnippet
+  Referrer-Policy: no-referrer
+
+/maria/*.png
+  Cache-Control: public, max-age=86400

@@ -1,0 +1,979 @@
+/* ==========================================================================
+   kahveli kahve date — standalone theme for /maria
+   Shares nothing with the main site stylesheet on purpose.
+
+   Direction: Project Zomboid survival chrome (dark olive bed, grain, vignette)
+   framing RimWorld parchment panels (tan fill, ink borders, colour-coded
+   schedule tiles), with cute pixel sprites as the single bright accent.
+   ========================================================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;1,400&display=swap");
+
+:root {
+  /* Zomboid chrome */
+  --pz-night: #17180f;
+  --pz-deep: #101109;
+  --pz-crate: #2b2a1c;
+  --pz-crate-hi: #3c3a26;
+  --pz-rust: #8a6a3a;
+
+  /* RimWorld panels */
+  --rim-parchment: #e6d9b8;
+  --rim-parchment-hi: #f2e8cd;
+  --rim-parchment-lo: #d3c39c;
+  --rim-ink: #3b2f1d;
+  --rim-ink-soft: #6b5a3e;
+
+  /* Schedule semantics — these three carry meaning, not decoration */
+  --sched-free: #7fa650;
+  --sched-free-hi: #9cc267;
+  --sched-guven: #4f7590;
+  --sched-maria: #d9924a;
+  --sched-both: #6b5f47;
+  --sched-locked: #4a463c;
+
+  /* the one cute accent */
+  --cute-rose: #e08a9b;
+  --cute-rose-hi: #f2a8b6;
+
+  --font-display: "Pixelify Sans", "Trebuchet MS", sans-serif;
+  --font-body: "Nunito", "Segoe UI", system-ui, sans-serif;
+  --font-data: ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  --edge: 2px;
+  --tile: 26px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100svh;
+  /* worn-surface tile under a radial wash — the tile is mirror-quilted so it has no seams */
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(43, 44, 30, 0.82) 0%,
+      rgba(23, 24, 15, 0.88) 45%,
+      rgba(16, 17, 9, 0.95) 100%
+    ),
+    url("/maria/bg-tile.png") repeat;
+  background-size: auto, 256px 256px;
+  color: var(--rim-parchment);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ---------------------------------------------------------------- atmosphere */
+
+/* film grain + scanlines + vignette, the Zomboid layer */
+.mz-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.16) 0px,
+      rgba(0, 0, 0, 0.16) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  animation: mz-scan 9s linear infinite;
+}
+
+.mz-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(8, 9, 5, 0.72) 100%);
+}
+
+@keyframes mz-scan {
+  from { background-position-y: 0; }
+  to { background-position-y: 120px; }
+}
+
+/* slow drifting dust motes */
+.mz-dust {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+.mz-mote {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: rgba(230, 217, 184, 0.5);
+  animation: mz-float linear infinite;
+}
+@keyframes mz-float {
+  0% { transform: translate3d(0, 105vh, 0); opacity: 0; }
+  10% { opacity: 0.7; }
+  90% { opacity: 0.7; }
+  100% { transform: translate3d(24px, -5vh, 0); opacity: 0; }
+}
+
+/* ---------------------------------------------------------------------- shell */
+
+.mz-shell {
+  position: relative;
+  z-index: 2;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 14px 72px;
+}
+
+/* ----------------------------------------------------------------- the gate */
+
+.mz-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background:
+    radial-gradient(circle at 50% 35%, #24251a 0%, var(--pz-deep) 70%);
+}
+
+.mz-gate-box {
+  width: 100%;
+  max-width: 340px;
+  text-align: center;
+  background: var(--pz-crate);
+  border: var(--edge) solid #55512f;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.5), 0 18px 44px rgba(0, 0, 0, 0.6);
+  padding: 26px 20px 22px;
+}
+
+.mz-gate-lock {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+.mz-gate-lock img {
+  display: block;
+  width: 116px;
+  height: auto;
+  image-rendering: pixelated;
+  /* the lantern in the artwork appears to flicker */
+  animation: mz-lantern 3.4s ease-in-out infinite;
+}
+@keyframes mz-lantern {
+  0%, 100% { filter: drop-shadow(0 0 7px rgba(217, 146, 74, 0.3)); }
+  45% { filter: drop-shadow(0 0 15px rgba(217, 146, 74, 0.55)); }
+  60% { filter: drop-shadow(0 0 9px rgba(217, 146, 74, 0.36)); }
+}
+
+.mz-gate-title {
+  font-family: var(--font-display);
+  font-size: 19px;
+  letter-spacing: 0.02em;
+  color: var(--rim-parchment);
+  margin: 0 0 4px;
+}
+
+.mz-gate-hint {
+  font-family: var(--font-data);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: #8d8768;
+  margin: 0 0 18px;
+}
+
+.mz-gate-row {
+  display: flex;
+  gap: 8px;
+}
+
+.mz-input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-data);
+  font-size: 15px;
+  letter-spacing: 0.3em;
+  text-align: center;
+  color: var(--rim-parchment);
+  background: #12130b;
+  border: var(--edge) solid #55512f;
+  padding: 10px 12px;
+  outline: none;
+}
+.mz-input:focus-visible {
+  border-color: var(--sched-free);
+  box-shadow: 0 0 0 2px rgba(127, 166, 80, 0.35);
+}
+
+.mz-gate.is-wrong .mz-gate-box {
+  animation: mz-shake 0.32s ease;
+  border-color: #a8523f;
+}
+@keyframes mz-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-7px); }
+  75% { transform: translateX(7px); }
+}
+
+.mz-gate-err {
+  font-family: var(--font-data);
+  font-size: 11px;
+  color: #d98a6f;
+  margin: 12px 0 0;
+  min-height: 1em;
+}
+
+/* --------------------------------------------------------------------- header */
+
+.mz-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 22px 0 14px;
+}
+
+.mz-wordmark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* the cup + its pixel steam */
+.mz-cup {
+  position: relative;
+  font-size: 30px;
+  line-height: 1;
+  flex: none;
+}
+.mz-steam {
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  width: 3px;
+  height: 3px;
+  background: rgba(230, 217, 184, 0.75);
+  animation: mz-steam 2.6s ease-in-out infinite;
+}
+.mz-steam:nth-child(2) { animation-delay: 0.55s; margin-left: -7px; }
+.mz-steam:nth-child(3) { animation-delay: 1.2s; margin-left: 6px; }
+@keyframes mz-steam {
+  0% { transform: translateY(4px) scale(1); opacity: 0; }
+  25% { opacity: 0.85; }
+  100% { transform: translateY(-16px) scale(1.9); opacity: 0; }
+}
+
+.mz-title {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 5.4vw, 30px);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  margin: 0;
+  color: var(--rim-parchment-hi);
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.55);
+}
+
+.mz-tagline {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 13px;
+  color: #9c9678;
+  margin: 2px 0 0;
+}
+
+/* language chips */
+.mz-langs {
+  display: flex;
+  gap: 5px;
+  flex: none;
+}
+.mz-lang {
+  font-family: var(--font-data);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #a8a184;
+  background: var(--pz-crate);
+  border: var(--edge) solid #4a4630;
+  padding: 5px 8px;
+  cursor: pointer;
+  transition: transform 0.12s, background 0.12s, color 0.12s;
+}
+.mz-lang:hover { background: var(--pz-crate-hi); color: var(--rim-parchment); }
+.mz-lang[aria-pressed="true"] {
+  background: var(--sched-free);
+  border-color: var(--sched-free-hi);
+  color: #16210b;
+  transform: translateY(-1px);
+}
+
+.mz-intro {
+  font-size: 15px;
+  color: #b6ae8d;
+  margin: 0 0 18px;
+  max-width: 62ch;
+}
+
+/* ------------------------------------------------------------- the mood meter */
+
+.mz-mood {
+  background: var(--pz-crate);
+  border: var(--edge) solid #4a4630;
+  padding: 9px 12px;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.mz-mood-label {
+  font-family: var(--font-data);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #8d8768;
+  flex: none;
+}
+.mz-mood-track {
+  flex: 1;
+  min-width: 120px;
+  height: 12px;
+  background: #12130b;
+  border: 1px solid #4a4630;
+  padding: 2px;
+  display: flex;
+  gap: 2px;
+}
+.mz-mood-seg {
+  flex: 1;
+  background: #23241a;
+  transition: background 0.35s ease;
+}
+.mz-mood-seg.is-on { background: var(--sched-free); }
+.mz-mood-seg.is-full { background: var(--cute-rose); }
+.mz-mood-text {
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--rim-parchment);
+  flex: none;
+}
+
+/* ---------------------------------------------------------------- rim panels */
+
+.mz-panel {
+  /* the fibre tile is washed back hard and scaled down — at full strength it read
+     as blotches rather than paper */
+  background:
+    linear-gradient(rgba(230, 217, 184, 0.74), rgba(230, 217, 184, 0.74)),
+    url("/maria/paper-tile.png") repeat;
+  background-size: auto, 104px 104px;
+  border: var(--edge) solid var(--rim-ink);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35), 0 10px 26px rgba(0, 0, 0, 0.4);
+  color: var(--rim-ink);
+  margin-bottom: 20px;
+  animation: mz-panel-in 0.4s cubic-bezier(0.2, 1.3, 0.4, 1) backwards;
+}
+.mz-panel:nth-of-type(1) { animation-delay: 0.04s; }
+.mz-panel:nth-of-type(2) { animation-delay: 0.12s; }
+.mz-panel:nth-of-type(3) { animation-delay: 0.2s; }
+@keyframes mz-panel-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+.mz-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--rim-ink);
+  color: var(--rim-parchment-hi);
+  padding: 7px 12px;
+}
+.mz-panel-step {
+  font-family: var(--font-data);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  background: var(--rim-parchment);
+  color: var(--rim-ink);
+  padding: 1px 6px;
+  flex: none;
+}
+.mz-panel-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  margin: 0;
+  flex: 1;
+}
+.mz-panel-opt {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 12px;
+  color: #b9ac8c;
+  flex: none;
+}
+.mz-panel-body { padding: 14px 12px 16px; }
+
+.mz-panel-lead {
+  font-size: 14px;
+  color: var(--rim-ink-soft);
+  margin: 0 0 12px;
+}
+
+/* ------------------------------------------- signature: the schedule grid */
+
+.mz-weeknav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.mz-weeklabel {
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 0.03em;
+}
+.mz-navbtn {
+  font-family: var(--font-data);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: var(--rim-parchment-lo);
+  color: var(--rim-ink);
+  border: var(--edge) solid var(--rim-ink);
+  padding: 4px 9px;
+  cursor: pointer;
+}
+.mz-navbtn:hover:not(:disabled) { background: var(--rim-parchment-hi); }
+.mz-navbtn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.mz-gridwrap {
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mz-grid {
+  border-collapse: separate;
+  border-spacing: 2px;
+  min-width: max-content;
+  user-select: none;
+  /* must stay `auto`: the grid is wider than a phone screen, so the wrapper needs
+     horizontal finger panning. Range selection on touch is tap-to-extend, not drag. */
+  touch-action: auto;
+}
+
+.mz-grid th {
+  font-family: var(--font-data);
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--rim-ink-soft);
+  padding: 0 0 2px;
+  text-align: center;
+}
+
+/* frozen day column: the grid scrolls sideways on phones, and without this you
+   lose track of which row is which day */
+.mz-daycell {
+  font-family: var(--font-data);
+  font-size: 11px;
+  text-align: right;
+  padding-right: 8px;
+  white-space: nowrap;
+  color: var(--rim-ink);
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background: var(--rim-parchment);
+  box-shadow: 2px 0 0 rgba(59, 47, 29, 0.18);
+}
+
+/* the empty corner cell has to sit above the hour headers as they scroll under it */
+.mz-grid thead th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 6;
+  background: var(--rim-parchment);
+}
+.mz-daycell b {
+  font-weight: 700;
+  display: inline-block;
+  min-width: 2ch;
+}
+/* weekends are emphasised with weight, not colour — blue and amber already mean
+   "someone is at work" in the legend, so reusing them here would mislead */
+.mz-daycell.is-weekend { color: var(--rim-ink); font-weight: 700; }
+.mz-daycell.is-locked { color: #a89a78; }
+
+.mz-slot {
+  width: var(--tile);
+  height: var(--tile);
+  min-width: var(--tile);
+  padding: 0;
+  border: 1px solid rgba(59, 47, 29, 0.4);
+  background: var(--sched-locked);
+  cursor: not-allowed;
+  position: relative;
+  transition: transform 0.09s, filter 0.09s;
+}
+.mz-slot.s-free {
+  background: var(--sched-free);
+  cursor: pointer;
+}
+.mz-slot.s-free:hover {
+  filter: brightness(1.18);
+  transform: scale(1.12);
+  z-index: 3;
+}
+.mz-slot.s-guven { background: var(--sched-guven); }
+.mz-slot.s-maria { background: var(--sched-maria); }
+.mz-slot.s-both {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      var(--sched-guven) 0 4px,
+      var(--sched-maria) 4px 8px
+    );
+}
+.mz-slot.s-locked {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      #4a463c 0 3px,
+      #3a372f 3px 6px
+    );
+}
+.mz-slot.is-picked {
+  background: var(--cute-rose);
+  border-color: #fff;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7);
+  transform: scale(1.06);
+  z-index: 2;
+}
+.mz-slot.is-inrange {
+  background: var(--cute-rose-hi);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+.mz-slot:focus-visible {
+  outline: 3px solid var(--rim-ink);
+  outline-offset: 1px;
+  z-index: 4;
+}
+
+.mz-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-top: 12px;
+  font-family: var(--font-data);
+  font-size: 11px;
+  color: var(--rim-ink-soft);
+}
+.mz-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.mz-swatch {
+  width: 13px;
+  height: 13px;
+  border: 1px solid rgba(59, 47, 29, 0.5);
+  flex: none;
+}
+.mz-swatch.k-free { background: var(--sched-free); }
+.mz-swatch.k-guven { background: var(--sched-guven); }
+.mz-swatch.k-maria { background: var(--sched-maria); }
+.mz-swatch.k-locked {
+  background: repeating-linear-gradient(45deg, #4a463c 0 3px, #3a372f 3px 6px);
+}
+
+/* the readout under the grid */
+.mz-pick {
+  margin-top: 14px;
+  border-top: 1px dashed var(--rim-ink-soft);
+  padding-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.mz-pick-none {
+  font-family: var(--font-data);
+  font-size: 12px;
+  color: #8d7d5e;
+}
+.mz-pick-val {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--rim-ink);
+}
+.mz-pick-dur {
+  font-family: var(--font-data);
+  font-size: 11px;
+  background: var(--cute-rose);
+  color: #3b1f26;
+  padding: 2px 7px;
+  min-width: 6.5ch;
+  text-align: center;
+}
+
+/* lengthen/shorten the range without dragging — the touch-friendly path */
+.mz-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.mz-stepper .mz-navbtn {
+  font-size: 15px;
+  line-height: 1;
+  min-width: 34px;
+  padding: 6px 8px;
+}
+
+/* --------------------------------------------------------------- venue cards */
+
+.mz-tier {
+  font-family: var(--font-data);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--rim-ink-soft);
+  margin: 16px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mz-tier::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(59, 47, 29, 0.28);
+}
+.mz-tier:first-child { margin-top: 0; }
+
+.mz-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+  gap: 10px;
+}
+
+.mz-card {
+  position: relative;
+  text-align: left;
+  /* same paper stock as the panel, washed lighter so cards lift off it */
+  background:
+    linear-gradient(rgba(250, 244, 228, 0.78), rgba(250, 244, 228, 0.78)),
+    url("/maria/paper-tile.png") repeat;
+  background-size: auto, 104px 104px;
+  border: var(--edge) solid var(--rim-ink-soft);
+  padding: 10px 11px 11px;
+  cursor: pointer;
+  font: inherit;
+  color: var(--rim-ink);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.13s, border-color 0.13s, box-shadow 0.13s;
+}
+.mz-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--rim-ink);
+  box-shadow: 0 6px 0 rgba(59, 47, 29, 0.22);
+}
+.mz-card:focus-visible {
+  outline: 3px solid var(--sched-guven);
+  outline-offset: 2px;
+}
+.mz-card.is-picked {
+  border-color: var(--cute-rose);
+  box-shadow: 0 0 0 2px var(--cute-rose), 0 6px 0 rgba(59, 47, 29, 0.22);
+  background: #fbf3e2;
+}
+
+.mz-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.mz-card-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex: none;
+}
+.mz-card-name {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.15;
+  margin: 0;
+  flex: 1;
+}
+.mz-card-note {
+  font-size: 12.5px;
+  color: var(--rim-ink-soft);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* RimWorld-ish stat rows */
+.mz-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-family: var(--font-data);
+  font-size: 10.5px;
+  color: var(--rim-ink-soft);
+}
+.mz-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mz-stat-k { min-width: 5.5em; flex: none; }
+.mz-stat-bar {
+  flex: 1;
+  height: 7px;
+  background: rgba(59, 47, 29, 0.16);
+  min-width: 34px;
+}
+.mz-stat-fill { height: 100%; background: var(--sched-free); }
+.mz-stat-v { flex: none; font-variant-numeric: tabular-nums; }
+
+.mz-openflag {
+  font-family: var(--font-data);
+  font-size: 10px;
+  padding: 2px 6px;
+  align-self: flex-start;
+}
+.mz-openflag.is-open { background: rgba(127, 166, 80, 0.24); color: #40561f; }
+.mz-openflag.is-shut { background: rgba(168, 82, 63, 0.2); color: #7d3325; }
+
+.mz-maps {
+  font-family: var(--font-data);
+  font-size: 10.5px;
+  color: var(--sched-guven);
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+  align-self: flex-start;
+}
+.mz-maps:hover { color: var(--rim-ink); }
+
+.mz-skip {
+  font-family: var(--font-display);
+  font-size: 14px;
+  background: var(--rim-parchment-lo);
+  border: var(--edge) solid var(--rim-ink-soft);
+  color: var(--rim-ink);
+  padding: 9px 14px;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: transform 0.12s, background 0.12s;
+}
+.mz-skip:hover { background: var(--rim-parchment-hi); transform: translateY(-2px); }
+.mz-skip.is-picked {
+  background: var(--cute-rose);
+  border-color: var(--rim-ink);
+}
+
+/* filter chips */
+.mz-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.mz-filter {
+  font-family: var(--font-data);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: transparent;
+  border: 1px solid var(--rim-ink-soft);
+  color: var(--rim-ink-soft);
+  padding: 4px 8px;
+  cursor: pointer;
+}
+.mz-filter[aria-pressed="true"] {
+  background: var(--rim-ink);
+  border-color: var(--rim-ink);
+  color: var(--rim-parchment-hi);
+}
+
+/* -------------------------------------------------------------- the plan card */
+
+.mz-plan {
+  background: var(--pz-crate);
+  border: var(--edge) solid var(--pz-rust);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.4), 0 12px 30px rgba(0, 0, 0, 0.45);
+  padding: 16px 14px 18px;
+  color: var(--rim-parchment);
+  position: relative;
+  overflow: hidden;
+}
+
+.mz-plan-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  margin: 0 0 12px;
+  color: var(--rim-parchment-hi);
+}
+
+.mz-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.mz-row {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  border-bottom: 1px dotted #4a4630;
+  padding-bottom: 7px;
+}
+.mz-row-k {
+  font-family: var(--font-data);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: #8d8768;
+  min-width: 5.5em;
+  flex: none;
+}
+.mz-row-v {
+  font-size: 14.5px;
+  color: var(--rim-parchment-hi);
+  flex: 1;
+}
+.mz-row-v.is-empty { color: #6e6a4f; }
+
+.mz-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mz-btn {
+  font-family: var(--font-display);
+  font-size: 14px;
+  padding: 10px 14px;
+  border: var(--edge) solid #55512f;
+  background: var(--pz-crate-hi);
+  color: var(--rim-parchment);
+  cursor: pointer;
+  transition: transform 0.12s, background 0.12s, border-color 0.12s;
+}
+.mz-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: #4a4730;
+}
+.mz-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.mz-btn.k-send {
+  background: var(--sched-free);
+  border-color: var(--sched-free-hi);
+  color: #16210b;
+}
+.mz-btn.k-send:hover:not(:disabled) { background: var(--sched-free-hi); }
+
+.mz-status {
+  font-family: var(--font-data);
+  font-size: 11.5px;
+  margin: 12px 0 0;
+  color: #8d8768;
+  min-height: 1.2em;
+}
+.mz-status.is-ready { color: var(--cute-rose-hi); }
+
+/* heart burst on a complete plan */
+.mz-hearts {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.mz-heart {
+  position: absolute;
+  bottom: -14px;
+  font-size: 14px;
+  animation: mz-rise 2.4s ease-out forwards;
+}
+@keyframes mz-rise {
+  0% { transform: translateY(0) scale(0.5) rotate(0deg); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translateY(-150px) scale(1.15) rotate(22deg); opacity: 0; }
+}
+
+.mz-foot {
+  font-family: var(--font-data);
+  font-size: 10.5px;
+  color: #5f5c46;
+  text-align: center;
+  margin-top: 26px;
+  letter-spacing: 0.06em;
+}
+.mz-reset {
+  background: none;
+  border: none;
+  color: #6f6b52;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+.mz-reset:hover { color: #a8a184; }
+
+/* -------------------------------------------------------------- small screens */
+
+@media (max-width: 560px) {
+  /* bigger tiles for thumbs — the grid scrolls sideways to make room */
+  :root { --tile: 32px; }
+  .mz-shell { padding: 0 10px 56px; }
+  .mz-cards { grid-template-columns: 1fr; }
+  .mz-tagline { display: none; }
+  .mz-grid th { font-size: 11px; }
+  .mz-daycell { font-size: 12px; }
+
+  /* fade at the right edge, so it's obvious the grid continues */
+  .mz-gridwrap {
+    position: relative;
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 22px), transparent 100%);
+  }
+  .mz-gridwrap.is-scrolled-end { mask-image: none; }
+
+  .mz-btn,
+  .mz-skip { padding: 12px 16px; }
+  .mz-navbtn { padding: 8px 11px; }
+}
+
+/* ------------------------------------------------------------ accessibility */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .mz-grain { animation: none; }
+  .mz-dust { display: none; }
+}

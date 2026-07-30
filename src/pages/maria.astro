@@ -1,0 +1,36 @@
+---
+// Standalone page — deliberately does NOT use Layout.astro, the site header, the
+// retro decor, the shared i18n or globals.css. Everything it needs is local.
+//
+// Privacy note: the passphrase is compared as a SHA-256 hash so the word itself
+// isn't in the bundle, and the page is noindex + excluded from the sitemap. It is
+// still a client-side gate — the venue list ships inside the JS, so treat this as
+// "keeps casual visitors and crawlers out", not as real access control.
+import KahveliKahve from "../components/maria/KahveliKahve";
+import "../styles/maria.css";
+---
+
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>kahveli kahve date</title>
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
+    <meta name="theme-color" content="#17180f" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href="/maria/hero-cups.png" type="image/png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  </head>
+  <body>
+    <KahveliKahve client:only="react" />
+    <noscript>
+      <p style="color:#e6d9b8;font-family:sans-serif;padding:24px;text-align:center">
+        Bu sayfa JavaScript gerektiriyor. / This page needs JavaScript. / Ta strona
+        wymaga JavaScriptu.
+      </p>
+    </noscript>
+  </body>
+</html>
