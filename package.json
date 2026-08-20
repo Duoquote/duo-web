@@ -8,6 +8,10 @@
     "build": "astro build && bun scripts/clean-ort-wasm.mjs",
     "preview": "astro preview"
   },
+  "comment:overrides": "Cloudflare Pages installs with npm, which ignores bun.lock and floats @swc/core past what vite-plugin-top-level-await 1.6.0 can drive (1.16.x makes its AST printer fail with: missing field `type`). Pin until the plugin catches up.",
+  "overrides": {
+    "@swc/core": "1.15.18"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/leaflet": "^1.9.21",
