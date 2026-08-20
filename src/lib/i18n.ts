@@ -67,6 +67,11 @@ const translations = {
     "tools.imageCompress.description":
       "Compare 13 compression presets side-by-side. MozJPEG, WebP, AVIF, JXL, PNG.",
 
+    // imdotter listing - lives at /imdotter, not under /tools
+    "tools.imdotter.name": "imdotter",
+    "tools.imdotter.description":
+      "Turn any image into a risograph print: spot inks, halftone dots, real paper.",
+
     // H3 Explorer
     "h3.backToTools": "← Back to tools",
     "h3.heading": "H3 Explorer",
@@ -407,6 +412,11 @@ const translations = {
     "tools.imageCompress.name": "Görsel Sıkıştırıcı",
     "tools.imageCompress.description":
       "13 sıkıştırma ön ayarını yan yana karşılaştırın. MozJPEG, WebP, AVIF, JXL, PNG.",
+
+    // imdotter listesi - /tools altında değil, /imdotter adresinde
+    "tools.imdotter.name": "imdotter",
+    "tools.imdotter.description":
+      "Herhangi bir görseli risograf baskıya çevirin: nokta renkler, tram noktaları, gerçek kağıt.",
 
     // H3 Explorer
     "h3.backToTools": "← Araçlara dön",

@@ -1,0 +1,51 @@
+---
+// Standalone page. imdotter is a full-viewport app with its own machine-console
+// identity, so it deliberately skips Layout.astro, the site header and the
+// shared decor — two stacked toolbars would be worse than none. The way back to
+// the site is a link inside its own topbar.
+import Imdotter from "../components/imdotter/Imdotter";
+import "../styles/imdotter.css";
+
+const title = "imdotter — risograph converter";
+const description =
+  "Turn any image into a risograph print in the browser: separated into spot inks, screened into halftone dots, printed on the paper you pick. Nothing is uploaded.";
+const canonical = new URL("/imdotter", Astro.site ?? "https://dq.ms").href;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="theme-color" content="#c9c6be" />
+    <meta name="color-scheme" content="light" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <Imdotter client:only="react" />
+    <noscript>
+      <p
+        style="color:#1b1d1c;font-family:system-ui,sans-serif;padding:24px;text-align:center"
+      >
+        imdotter runs the whole conversion in your browser, so it needs
+        JavaScript. <a href="/">Back to dq.ms</a>
+      </p>
+    </noscript>
+  </body>
+</html>

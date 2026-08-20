@@ -36,6 +36,12 @@ const tools = [
     description: t(locale, "tools.imageCompress.description"),
     href: getLocalizedPath(locale, "/tools/image-compress"),
   },
+  {
+    name: t(locale, "tools.imdotter.name"),
+    description: t(locale, "tools.imdotter.description"),
+    // Top-level route, so it is not localized the way /tools/* pages are.
+    href: "/imdotter",
+  },
 ];
 ---
 
