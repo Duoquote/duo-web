@@ -155,3 +155,30 @@ export function emptyAltFallback() {
     },
   };
 }
+
+/**
+ * Astro emits the original file of every image a collection entry imports,
+ * drafts included, even when no page uses it. After the build, delete files in
+ * _astro/ that no HTML, CSS, JS or XML file references, so draft images and
+ * unused originals don't end up on the server.
+ */
+export function pruneUnusedAssets() {
+  return {
+    name: "blog:prune-unused-assets",
+    hooks: {
+      "astro:build:done": async ({ dir, logger }) => {
+        const { readdir, readFile, rm } = await import("node:fs/promises");
+        const { fileURLToPath } = await import("node:url");
+        const root = fileURLToPath(dir);
+        const all = (await readdir(root, { recursive: true })).map((f) => f.split(path.sep).join("/"));
+        const assets = all.filter((f) => f.startsWith("_astro/") && !f.slice(7).includes("/"));
+        const texts = all.filter((f) => /\.(html|css|js|mjs|xml)$/.test(f));
+        let haystack = "";
+        for (const f of texts) haystack += await readFile(path.join(root, f), "utf8");
+        const unused = assets.filter((f) => !/\.(css|js|mjs)$/.test(f) && !haystack.includes(path.basename(f)));
+        for (const f of unused) await rm(path.join(root, f));
+        if (unused.length) logger.info(`removed ${unused.length} unreferenced asset(s)`);
+      },
+    },
+  };
+}

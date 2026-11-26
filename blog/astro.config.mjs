@@ -2,7 +2,7 @@ import { defineConfig } from "astro/config";
 import tailwindcss from "@tailwindcss/vite";
 import { rehypeHeadingIds } from "@astrojs/markdown-remark";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
-import { remarkPostChecks, rehypePostImages, emptyAltFallback } from "./src/lib/markdown.mjs";
+import { remarkPostChecks, rehypePostImages, emptyAltFallback, pruneUnusedAssets } from "./src/lib/markdown.mjs";
 
 /**
  * The blog is its own Astro project (served at blog.dq.ms) that shares the
@@ -15,7 +15,7 @@ export default defineConfig({
   // The Worker's html_handling ("drop-trailing-slash") matches this.
   trailingSlash: "never",
   build: { format: "file" },
-  integrations: [emptyAltFallback()],
+  integrations: [emptyAltFallback(), pruneUnusedAssets()],
   image: {
     // srcset + sizes for every optimized image, including Markdown ones
     layout: "constrained",
