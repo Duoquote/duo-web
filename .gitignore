@@ -7,3 +7,4 @@ dist/
 wasm/geo-parser/target/
 wasm/imvector/target/
 .analysis/
+.wrangler/
