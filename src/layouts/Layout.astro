@@ -36,9 +36,11 @@ const trURL = new URL(trPath, Astro.site);
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "Person",
+  // same @id the blog uses for its author, so both sites describe one person
+  "@id": "https://dq.ms/#person",
   name: "Güven Değirmenci",
   url: "https://dq.ms",
-  jobTitle: "Managing Partner",
+  jobTitle: "CTO and Managing Partner",
   worksFor: {
     "@type": "Organization",
     name: "Next Geo",
