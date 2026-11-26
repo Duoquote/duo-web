@@ -7,6 +7,8 @@ const translations = {
     "nav.tools": "Tools",
     "nav.links": "Links",
     "nav.blog": "Blog",
+    "nav.menu": "Menu",
+    "nav.menuClose": "Close menu",
 
     // Hero
     "hero.badge": "Managing Partner @ Next Geo",
@@ -340,6 +342,8 @@ const translations = {
     "nav.tools": "Araçlar",
     "nav.links": "Bağlantılar",
     "nav.blog": "Blog",
+    "nav.menu": "Menü",
+    "nav.menuClose": "Menüyü kapat",
 
     // Hero
     "hero.badge": "Yönetici Ortak @ Next Geo",
