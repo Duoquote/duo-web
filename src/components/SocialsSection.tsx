@@ -13,6 +13,7 @@ const commands = [
   {
     prompt: "$ socials --list",
     links: [
+      { label: "blog", href: "https://blog.dq.ms" },
       { label: "github", href: "https://github.com/duoquote" },
       { label: "linkedin", href: "https://www.linkedin.com/in/duoquote/" },
       { label: "stackoverflow", href: "https://stackoverflow.com/users/7493063/guven-degirmenci" },

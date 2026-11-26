@@ -1,4 +1,4 @@
-import { Github, Linkedin } from "lucide-react";
+import { Github, Linkedin, Rss } from "lucide-react";
 import { getYearsOfExperience } from "../lib/years";
 import { t, type Locale } from "../lib/i18n";
 
@@ -47,6 +47,13 @@ export default function Hero({ locale = "en" }: { locale?: Locale }) {
           >
             <Linkedin className="h-4 w-4" />
             LinkedIn
+          </a>
+          <a
+            href="https://blog.dq.ms"
+            className="inline-flex items-center gap-2 border border-border bg-card/60 px-6 py-2.5 text-sm font-semibold text-foreground no-underline transition-colors hover:border-primary/40 hover:bg-card"
+          >
+            <Rss className="h-4 w-4" />
+            {t(locale, "nav.blog")}
           </a>
         </div>
 
