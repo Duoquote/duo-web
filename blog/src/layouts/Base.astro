@@ -18,6 +18,8 @@ export interface Props {
   jsonLd?: Record<string, unknown>[];
   lang?: "en" | "tr";
   noindex?: boolean;
+  /** Path of a Markdown version of this page, advertised with rel="alternate". */
+  markdownPath?: string;
 }
 
 const {
@@ -31,6 +33,7 @@ const {
   jsonLd = [],
   lang = "en",
   noindex = false,
+  markdownPath,
 } = Astro.props;
 
 const canonical = absolute(path);
@@ -60,6 +63,7 @@ const ogLocale = lang === "tr" ? "tr_TR" : "en_US";
 
     <link rel="alternate" type="application/rss+xml" title={BLOG_NAME} href={absolute("/rss.xml")} />
     <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+    {markdownPath && <link rel="alternate" type="text/markdown" href={absolute(markdownPath)} />}
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" href="/favicon.png" />
