@@ -1,0 +1,11 @@
+---
+import Base from "../layouts/Base.astro";
+import { SITE_OG_IMAGE } from "../lib/og";
+import { COPY } from "../lib/site";
+---
+
+<Base title="Page not found · Güven Değirmenci" description={COPY.notFoundBody} path="/404" image={SITE_OG_IMAGE} noindex>
+  <h1 class="mb-3 text-3xl font-bold tracking-tight text-foreground">{COPY.notFoundTitle}</h1>
+  <p class="mb-8 text-muted-foreground">{COPY.notFoundBody}</p>
+  <a href="/" class="text-sm text-primary hover:underline">Back to the blog</a>
+</Base>

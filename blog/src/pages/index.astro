@@ -1,0 +1,78 @@
+---
+import Base from "../layouts/Base.astro";
+import { getPosts, postUrl, describe } from "../lib/posts";
+import { SITE_OG_IMAGE } from "../lib/og";
+import { AUTHOR, BLOG_DESCRIPTION, BLOG_NAME, BLOG_TITLE, COPY, MAIN_SITE_URL, REPO_URL, SITE_URL, absolute, formatDate } from "../lib/site";
+
+const posts = await getPosts();
+const [sourceBefore, sourceAfter] = COPY.source.split("duo-web");
+
+const person = { "@type": "Person", "@id": `${MAIN_SITE_URL}/#person`, name: AUTHOR.name, url: AUTHOR.url, sameAs: AUTHOR.sameAs };
+
+const jsonLd = [
+  {
+    "@type": "Blog",
+    "@id": `${SITE_URL}/#blog`,
+    url: `${SITE_URL}/`,
+    name: BLOG_NAME,
+    description: BLOG_DESCRIPTION,
+    inLanguage: "en",
+    author: person,
+    publisher: person,
+    blogPost: posts.map((post) => ({
+      "@type": "BlogPosting",
+      headline: post.data.title,
+      url: absolute(postUrl(post)),
+      datePublished: post.data.date.toISOString(),
+    })),
+  },
+  {
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Güven Değirmenci", item: `${MAIN_SITE_URL}/` },
+      { "@type": "ListItem", position: 2, name: "Blog", item: `${SITE_URL}/` },
+    ],
+  },
+];
+---
+
+<Base title={BLOG_TITLE} description={BLOG_DESCRIPTION} path="/" image={SITE_OG_IMAGE} jsonLd={jsonLd}>
+  <h1 class="mb-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">Blog</h1>
+  <p class="max-w-xl text-base text-muted-foreground">{COPY.intro}</p>
+  <p class="mb-12 max-w-xl text-sm text-muted-foreground">
+    {sourceBefore}<a href={REPO_URL} class="text-foreground hover:text-primary">duo-web</a>{sourceAfter}
+  </p>
+
+  {
+    posts.length === 0 ? (
+      <p class="text-sm text-muted-foreground">{COPY.empty}</p>
+    ) : (
+      <ol class="grid gap-4" reversed>
+        {posts.map((post) => (
+          <li>
+            <a
+              href={postUrl(post)}
+              class="group block border border-border bg-card/60 p-5 transition-colors hover:border-primary/30 hover:bg-card"
+            >
+              <div class="mb-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                <time datetime={post.data.date.toISOString()} class="tabular-nums">
+                  {formatDate(post.data.date)}
+                </time>
+                {post.data.draft && <span class="text-primary uppercase tracking-wider">Draft</span>}
+                {post.data.tags.map((tag) => (
+                  <span class="bg-primary/5 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-primary/80">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <h2 class="mb-1.5 text-base font-semibold text-card-foreground group-hover:text-primary">
+                {post.data.title}
+              </h2>
+              <p class="text-sm text-muted-foreground">{describe(post)}</p>
+            </a>
+          </li>
+        ))}
+      </ol>
+    )
+  }
+</Base>

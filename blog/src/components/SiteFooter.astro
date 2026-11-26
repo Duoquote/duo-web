@@ -1,0 +1,19 @@
+---
+import { COPY, MAIN_SITE_URL } from "../lib/site";
+
+// Link "dq.ms" inside the about line without splitting the copy into pieces.
+const [before, after] = COPY.about.split("dq.ms");
+---
+
+<footer class="border-t border-border/50">
+  <div class="mx-auto flex max-w-3xl flex-col gap-3 px-4 py-8 text-sm text-muted-foreground md:px-6">
+    <p class="max-w-xl">
+      {before}<a href={MAIN_SITE_URL} class="text-foreground hover:text-primary">dq.ms</a>{after}
+    </p>
+    <p class="text-xs">
+      <a href="/rss.xml" class="hover:text-foreground">RSS</a>
+      <span aria-hidden="true"> · </span>
+      <a href="https://github.com/Duoquote" class="hover:text-foreground">GitHub</a>
+    </p>
+  </div>
+</footer>

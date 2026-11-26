@@ -1,0 +1,212 @@
+/* Only scan the blog for Tailwind classes, not the main site. */
+@import "tailwindcss" source("..");
+@import "./fonts.css";
+@import "../../../src/styles/theme.css";
+
+/* used by the footnotes label that Markdown generates */
+@source inline("sr-only");
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    border-color: var(--border);
+  }
+  html {
+    scroll-padding-top: 4.5rem;
+  }
+  body {
+    @apply flex min-h-screen flex-col bg-background font-sans text-foreground antialiased;
+    /* same grid as the main site, without the background photo */
+    background-image:
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    background-size: 72px 72px;
+    background-attachment: fixed;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+.theme-icon-sun { display: none; }
+.dark .theme-icon-sun { display: block; }
+.dark .theme-icon-moon { display: none; }
+
+/* ---------- Post body ---------- */
+
+.post-content {
+  color: var(--foreground);
+  font-size: 1rem;
+  line-height: 1.75;
+  overflow-wrap: break-word;
+}
+
+.post-content > :first-child { margin-top: 0; }
+
+.post-content h2,
+.post-content h3,
+.post-content h4,
+.post-content h5,
+.post-content h6 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  color: var(--foreground);
+  margin-top: 2.25em;
+  margin-bottom: 0.75em;
+}
+
+.post-content h2 { font-size: 1.5rem; }
+.post-content h3 { font-size: 1.25rem; }
+.post-content h4 { font-size: 1.0625rem; }
+.post-content h5,
+.post-content h6 { font-size: 1rem; }
+
+.post-content .heading-anchor {
+  margin-left: 0.4em;
+  color: var(--muted-foreground);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.post-content :is(h2, h3, h4, h5, h6):hover .heading-anchor,
+.post-content .heading-anchor:focus-visible {
+  opacity: 1;
+}
+
+.post-content p,
+.post-content ul,
+.post-content ol,
+.post-content table,
+.post-content figure,
+.post-content pre,
+.post-content blockquote {
+  margin-top: 0;
+  margin-bottom: 1.25em;
+}
+
+.post-content a:not(.heading-anchor) {
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklch, var(--primary) 35%, transparent);
+  text-underline-offset: 0.2em;
+}
+.post-content a:not(.heading-anchor):hover {
+  text-decoration-color: var(--primary);
+}
+
+.post-content strong { font-weight: 600; }
+
+.post-content ul,
+.post-content ol { padding-left: 1.5em; }
+.post-content ul { list-style-type: disc; }
+.post-content ol { list-style-type: decimal; }
+.post-content li { margin-bottom: 0.375em; }
+.post-content li > ul,
+.post-content li > ol { margin-top: 0.375em; margin-bottom: 0; }
+.post-content li:has(> input[type="checkbox"]) { list-style: none; margin-left: -1.5em; }
+.post-content input[type="checkbox"] { margin-right: 0.5em; vertical-align: -0.1em; }
+
+.post-content blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 1em;
+  color: var(--muted-foreground);
+}
+
+.post-content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2.5em 0;
+}
+
+/* inline code */
+.post-content :not(pre) > code {
+  font-size: 0.875em;
+  background: var(--muted);
+  padding: 0.15em 0.35em;
+  border-radius: 2px;
+}
+
+/* code blocks (Shiki, light and dark themes via CSS variables) */
+.post-content pre {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  border: 1px solid var(--border);
+  padding: 1em 1.25em;
+  overflow-x: auto;
+  background-color: var(--card) !important;
+}
+.post-content pre code { background: none; padding: 0; }
+.dark .astro-code,
+.dark .astro-code span {
+  color: var(--shiki-dark) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+  text-decoration: var(--shiki-dark-text-decoration) !important;
+}
+
+.post-content code,
+.post-content pre {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+}
+
+/* tables */
+.post-content table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+.post-content th,
+.post-content td {
+  border: 1px solid var(--border);
+  padding: 0.45em 0.8em;
+  text-align: left;
+}
+.post-content th {
+  font-weight: 600;
+  background: var(--muted);
+}
+
+/* images and figures */
+.post-content img {
+  max-width: 100%;
+  height: auto;
+}
+.post-content figure {
+  margin-top: 2em;
+  margin-bottom: 2em;
+}
+.post-content figure img {
+  margin: 0 auto;
+  border: 1px solid var(--border);
+}
+.post-content figcaption {
+  margin-top: 0.6em;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+/* footnotes (GFM) */
+.post-content sup a { text-decoration: none; }
+.post-content .footnotes {
+  margin-top: 3em;
+  padding-top: 1.25em;
+  border-top: 1px solid var(--border);
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+.post-content .footnotes h2 {
+  /* Astro renders this as a visually hidden "Footnotes" label */
+  margin: 0;
+}
+.post-content .footnotes p { margin-bottom: 0.5em; }
+.post-content .data-footnote-backref { text-decoration: none; margin-left: 0.25em; }

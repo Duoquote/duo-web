@@ -1,0 +1,17 @@
+// Cloudflare Worker that serves the static blog build at blog.dq.ms.
+// Deploy from the repo root: bun run deploy:blog
+{
+  "name": "duo-blog",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist",
+    // /my-post serves my-post.html; /my-post/ and /my-post.html redirect to /my-post
+    "html_handling": "drop-trailing-slash",
+    // unknown paths get dist/404.html with a 404 status
+    "not_found_handling": "404-page"
+  },
+  "routes": [{ "pattern": "blog.dq.ms", "custom_domain": true }],
+  // only blog.dq.ms serves the blog: no *.workers.dev or preview hostnames
+  "workers_dev": false,
+  "preview_urls": false
+}

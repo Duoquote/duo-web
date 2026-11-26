@@ -1,0 +1,120 @@
+---
+import "../styles/blog.css";
+import font400 from "@fontsource/google-sans/files/google-sans-latin-400-normal.woff2?url";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import { AUTHOR, BLOG_NAME, absolute } from "../lib/site";
+
+export interface Props {
+  title: string;
+  /** og:title / twitter:title. Defaults to `title`. */
+  socialTitle?: string;
+  description: string;
+  /** Path of this page, e.g. "/" or "/my-post". Used for canonical and og:url. */
+  path: string;
+  image: { url: string; width: number; height: number; alt: string };
+  type?: "website" | "article";
+  article?: { published: Date; modified: Date; tags: string[] };
+  jsonLd?: Record<string, unknown>[];
+  lang?: "en" | "tr";
+  noindex?: boolean;
+}
+
+const {
+  title,
+  socialTitle = title,
+  description,
+  path,
+  image,
+  type = "website",
+  article,
+  jsonLd = [],
+  lang = "en",
+  noindex = false,
+} = Astro.props;
+
+const canonical = absolute(path);
+const ogImage = absolute(image.url);
+const ogLocale = lang === "tr" ? "tr_TR" : "en_US";
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>
+      (function () {
+        var stored = localStorage.getItem("theme");
+        var dark = stored ? stored === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.classList.toggle("dark", dark);
+      })();
+    </script>
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <meta name="author" content={AUTHOR.name} />
+    <meta name="generator" content={Astro.generator} />
+
+    <link rel="alternate" type="application/rss+xml" title={BLOG_NAME} href={absolute("/rss.xml")} />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0a" />
+
+    <link rel="preload" href={font400} as="font" type="font/woff2" crossorigin />
+
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content={BLOG_NAME} />
+    <meta property="og:locale" content={ogLocale} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:title" content={socialTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content={String(image.width)} />
+    <meta property="og:image:height" content={String(image.height)} />
+    <meta property="og:image:alt" content={image.alt} />
+    {
+      article && (
+        <>
+          <meta property="article:published_time" content={article.published.toISOString()} />
+          <meta property="article:modified_time" content={article.modified.toISOString()} />
+          <meta property="article:author" content={AUTHOR.url} />
+          {article.tags.map((tag) => (
+            <meta property="article:tag" content={tag} />
+          ))}
+        </>
+      )
+    }
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={socialTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content={image.alt} />
+
+    {
+      jsonLd.length > 0 && (
+        <script
+          type="application/ld+json"
+          set:html={JSON.stringify(
+            { "@context": "https://schema.org", "@graph": jsonLd },
+          ).replace(/</g, "\\u003c")}
+        />
+      )
+    }
+  </head>
+  <body>
+    <SiteHeader />
+    <main id="main" class="mx-auto w-full max-w-3xl flex-1 px-4 pt-24 pb-16 md:px-6">
+      <slot />
+    </main>
+    <SiteFooter />
+  </body>
+</html>

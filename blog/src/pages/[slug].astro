@@ -1,0 +1,122 @@
+---
+import { render } from "astro:content";
+import { Image } from "astro:assets";
+import Base from "../layouts/Base.astro";
+import { getPosts, postUrl, describe, modifiedDate, isUpdated, type Post } from "../lib/posts";
+import { ogImageFor } from "../lib/og";
+import { AUTHOR, BLOG_NAME, MAIN_SITE_URL, SITE_URL, absolute, formatDate } from "../lib/site";
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props as { post: Post };
+const { Content } = await render(post);
+
+const url = absolute(postUrl(post));
+const description = describe(post);
+const published = post.data.date;
+const modified = modifiedDate(post);
+const image = await ogImageFor(post);
+
+if (post.data.cover && !post.data.coverAlt?.trim()) {
+  console.warn(`\x1b[33m[blog]\x1b[0m ${post.id}: cover has no coverAlt. Using the title as alt text.`);
+}
+
+const person = { "@type": "Person", "@id": `${MAIN_SITE_URL}/#person`, name: AUTHOR.name, url: AUTHOR.url, sameAs: AUTHOR.sameAs };
+
+const jsonLd = [
+  {
+    "@type": "BlogPosting",
+    "@id": `${url}#post`,
+    headline: post.data.title,
+    description,
+    url,
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    datePublished: published.toISOString(),
+    dateModified: modified.toISOString(),
+    author: person,
+    publisher: person,
+    image: { "@type": "ImageObject", url: absolute(image.url), width: image.width, height: image.height },
+    inLanguage: post.data.lang,
+    ...(post.data.tags.length ? { keywords: post.data.tags.join(", ") } : {}),
+    isPartOf: { "@type": "Blog", "@id": `${SITE_URL}/#blog`, name: BLOG_NAME, url: `${SITE_URL}/` },
+  },
+  {
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Güven Değirmenci", item: `${MAIN_SITE_URL}/` },
+      { "@type": "ListItem", position: 2, name: "Blog", item: `${SITE_URL}/` },
+      { "@type": "ListItem", position: 3, name: post.data.title, item: url },
+    ],
+  },
+];
+---
+
+<Base
+  title={`${post.data.title} · Güven Değirmenci`}
+  socialTitle={post.data.title}
+  description={description}
+  path={postUrl(post)}
+  image={image}
+  type="article"
+  article={{ published, modified, tags: post.data.tags }}
+  jsonLd={jsonLd}
+  lang={post.data.lang}
+  noindex={post.data.draft}
+>
+  <nav aria-label="Breadcrumb" class="mb-6 text-sm text-muted-foreground">
+    <a href="/" class="transition-colors hover:text-foreground">Blog</a>
+  </nav>
+
+  <article>
+    <header class="mb-8">
+      {post.data.draft && <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-primary">Draft, not published</p>}
+      <h1 class="mb-3 text-3xl font-bold tracking-tight text-balance text-foreground md:text-4xl">
+        {post.data.title}
+      </h1>
+      <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+        <time datetime={published.toISOString()}>{formatDate(published)}</time>
+        {
+          isUpdated(post) && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>
+                Updated <time datetime={modified.toISOString()}>{formatDate(modified)}</time>
+              </span>
+            </>
+          )
+        }
+        {post.data.tags.length > 0 && <span aria-hidden="true">·</span>}
+        {
+          post.data.tags.map((tag) => (
+            <span class="bg-primary/5 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-primary/80">
+              {tag}
+            </span>
+          ))
+        }
+      </p>
+    </header>
+
+    {
+      post.data.cover && (
+        <Image
+          src={post.data.cover}
+          alt={post.data.coverAlt ?? post.data.title}
+          priority
+          sizes="(min-width: 800px) 720px, 100vw"
+          class="mb-10 w-full border border-border"
+        />
+      )
+    }
+
+    <div class="post-content">
+      <Content />
+    </div>
+  </article>
+
+  <p class="mt-12 border-t border-border pt-6 text-sm">
+    <a href="/" class="text-muted-foreground transition-colors hover:text-foreground">More posts</a>
+  </p>
+</Base>
