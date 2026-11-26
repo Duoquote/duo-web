@@ -97,11 +97,15 @@ Start sections at `##`, because the title is the page's only `h1`. Images go nex
 bun run dev:blog       # http://localhost:4321, drafts included
 bun run build:blog     # static output in blog/dist, drafts excluded
 BLOG_DRAFTS=1 bun run build:blog   # build with drafts, for checking them
-bun run deploy:blog    # build and deploy with wrangler
+bun run deploy:blog    # build, deploy with wrangler, ping IndexNow with changed URLs
 ```
 
 ### Hosting
 
-`blog/dist` is served by a Cloudflare Worker with static assets (`duo-blog`, config in `blog/wrangler.jsonc`) on the custom domain `blog.dq.ms`. The only code is `blog/worker.js`, which redirects http and any other hostname to https://blog.dq.ms. `_headers` sets the cache rules, and unknown paths get `404.html` with a real 404 status.
+`blog/dist` is served by a Cloudflare Worker with static assets (`duo-blog`, config in `blog/wrangler.jsonc`) on the custom domain `blog.dq.ms`. The only code is `blog/worker.js`. It redirects http and any other hostname to https://blog.dq.ms, sends `/post/` and `/post.html` to `/post` with a 301, and returns the Markdown version of a page when the request asks for `text/markdown`. `_headers` sets the cache rules, and unknown paths get `404.html` with a real 404 status.
 
-The build also writes `sitemap.xml`, `rss.xml`, `robots.txt` and a 1200x630 Open Graph card for each post without a cover.
+The build also writes `sitemap.xml`, `rss.xml`, `robots.txt`, a 1200x630 Open Graph card for each post without a cover, `llms.txt`, `llms-full.txt`, and a Markdown copy of each post at `/<slug>.md`. All of them come from the same posts, so a new post shows up everywhere on the next build.
+
+`blog/scripts/deploy.mjs` deploys `blog/dist`. Before deploying, it reads the live sitemap, and afterwards it sends the new or changed URLs to IndexNow (Bing, Yandex and others). The key file is in `blog/public/`. To deploy from Cloudflare Workers Builds, use `bun run build:blog` as the build command and `node blog/scripts/deploy.mjs` as the deploy command.
+
+The main site has its own `llms.txt` and `llms-full.txt` (`src/lib/llms.ts`), built from the same strings as the pages.
