@@ -1,15 +1,18 @@
 import { getYearsOfExperience } from "../lib/years";
 import { t, type Locale } from "../lib/i18n";
 
+// also listed in /llms-full.txt
+export const TECH_GROUPS = [
+  { labelKey: "about.tech.frontend", items: ["React", "Leaflet", "Electron.js"] },
+  { labelKey: "about.tech.backend", items: ["Node.js", "Python", "Django"] },
+  { labelKey: "about.tech.data", items: ["PostgreSQL", "MySQL", "ClickHouse"] },
+  { labelKey: "about.tech.infra", items: ["Docker", "Linux", "DevOps", "Git"] },
+] as const;
+
 export default function AboutSection({ locale = "en" }: { locale?: Locale }) {
   const years = getYearsOfExperience();
 
-  const techGroups = [
-    { label: t(locale, "about.tech.frontend"), items: ["React", "Leaflet", "Electron.js"] },
-    { label: t(locale, "about.tech.backend"), items: ["Node.js", "Python", "Django"] },
-    { label: t(locale, "about.tech.data"), items: ["PostgreSQL", "MySQL", "ClickHouse"] },
-    { label: t(locale, "about.tech.infra"), items: ["Docker", "Linux", "DevOps", "Git"] },
-  ];
+  const techGroups = TECH_GROUPS.map((g) => ({ label: t(locale, g.labelKey), items: g.items }));
 
   const stats = [
     { label: t(locale, "about.stat.location"), value: t(locale, "about.stat.locationValue") },

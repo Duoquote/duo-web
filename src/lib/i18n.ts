@@ -674,7 +674,7 @@ const translations = {
   },
 } as const;
 
-type TranslationKey = keyof (typeof translations)["en"];
+export type TranslationKey = keyof (typeof translations)["en"];
 
 export function t(
   locale: Locale,
