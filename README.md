@@ -102,6 +102,6 @@ bun run deploy:blog    # build and deploy with wrangler
 
 ### Hosting
 
-`blog/dist` is served by a Cloudflare Worker with static assets (`duo-blog`, config in `blog/wrangler.jsonc`) on the custom domain `blog.dq.ms`. There's no server code: `_headers` sets the cache rules, and unknown paths get `404.html` with a real 404 status.
+`blog/dist` is served by a Cloudflare Worker with static assets (`duo-blog`, config in `blog/wrangler.jsonc`) on the custom domain `blog.dq.ms`. The only code is `blog/worker.js`, which redirects http and any other hostname to https://blog.dq.ms. `_headers` sets the cache rules, and unknown paths get `404.html` with a real 404 status.
 
 The build also writes `sitemap.xml`, `rss.xml`, `robots.txt` and a 1200x630 Open Graph card for each post without a cover.
