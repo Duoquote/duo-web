@@ -42,6 +42,8 @@ export default function Header({ locale = "en" }: { locale?: Locale }) {
     { label: t(locale, "nav.home"), href: getLocalizedPath(locale, "/") },
     { label: t(locale, "nav.tools"), href: getLocalizedPath(locale, "/tools") },
     { label: t(locale, "nav.links"), href: getLocalizedPath(locale, "/links") },
+    // separate site, English only
+    { label: t(locale, "nav.blog"), href: "https://blog.dq.ms" },
   ];
 
   const currentPath =

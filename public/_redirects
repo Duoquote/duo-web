@@ -1,0 +1,3 @@
+# The blog lives on its own subdomain (blog/ in this repo, deployed as a Worker).
+/blog     https://blog.dq.ms/        301
+/blog/*   https://blog.dq.ms/:splat  301
