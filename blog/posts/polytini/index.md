@@ -9,7 +9,7 @@ summary:
   - "Install with `pnpm add @duoquote/polytini`, `bun add @duoquote/polytini` or `deno add jsr:@duoquote/polytini`."
 tags: [javascript, gis, polyline, performance]
 cover: ./cover.png
-coverAlt: The polytini logo, a small bird sitting on a line, next to the text "Encode and decode Google polylines in Node, Bun, Deno and the browser"
+coverAlt: The polytini logo, a small bird sitting on a line, next to the text "Encode and decode Google polylines in Node, Bun, Deno, browsers and Workers" and the command pnpm add @duoquote/polytini
 draft: true
 ---
 
