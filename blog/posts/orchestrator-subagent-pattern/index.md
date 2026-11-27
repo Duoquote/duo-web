@@ -8,7 +8,7 @@ summary:
   - "No memories or decision lists. Haiku scouts read the code and report what's true now. Opus 5.5 at high effort runs the orchestrator and the lead, and Fable 5.2 at high does design work."
   - "It grew from 10-agent swarms in February 2026 to one writer per workstream in late September. It's close to Cognition's single-writer rule (April 2026) and to what Anthropic (22 October) and Google (13 November) published later."
 tags: [ai, claude-code, agents, subagents]
-draft: true
+draft: false
 ---
 
 When I want something done in a project, I start the main Claude Code agent in that project and treat it as an orchestrator, in the literal sense. It's more like a partner or an assistant than a coder. It plans, writes briefs for subagents, reviews what they send back and tells me where things stand. The code gets written by the subagents.
@@ -68,7 +68,5 @@ Where I differ most is verification. Most advice adds a separate verifier agent.
 I don't follow my own rules strictly. The main agent is supposed to work only through subagents, but sessions that used agents still made a median of 21 edits themselves. "One at a time" turned into one lead per workstream: in 47 of 66 sessions with agents, two or more were alive at once.
 
 Worktrees went both ways: forbidden in August, now in a fixed folder. One lead per repo doesn't need them, several leads in one repo do.
-
-Some of the pattern isn't mine. Claude Code kept suggesting fan-out, and in June a background Opus job launched three parallel agents without being asked.
 
 It's also slow for small things. A brief and a review cost more than a one-line fix, so I only orchestrate multi-step work.
