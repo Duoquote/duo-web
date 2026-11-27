@@ -10,7 +10,7 @@ summary:
 tags: [javascript, gis, polyline, performance]
 cover: ./cover.png
 coverAlt: The polytini logo, a small bird sitting on a line, next to the text "Encode and decode Google polylines in Node, Bun, Deno, browsers and Workers" and the command pnpm add @duoquote/polytini
-draft: true
+draft: false
 ---
 
 polytini is a JavaScript library for Google encoded polylines, the short strings like `_p~iF~ps|U_ulLnnqC` that Google Maps, OSRM, Valhalla, GraphHopper and Mapbox return for route geometry. It's on [npm](https://www.npmjs.com/package/@duoquote/polytini) and [JSR](https://jsr.io/@duoquote/polytini) as `@duoquote/polytini`, and it runs in Node, Bun, Deno, browsers and Cloudflare Workers.
