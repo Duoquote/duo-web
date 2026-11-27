@@ -23,11 +23,11 @@ I picked it up again this year and went further. The benchmark now checks every 
 
 ## How it compares
 
-Numbers are from the November 2026 run, with polytini 0.1.0 on a Ryzen 7 5800X. A single cell moved about 30% between rounds, so I count smaller gaps as a tie.
+Numbers are from the November 2026 run, with polytini 0.1.0 on a Ryzen 7 5800X. A cell moved about 30% between rounds, so I count smaller gaps as a tie.
 
-Encoding is the clear win. Across all runtimes and line lengths, polytini was 2.05 times as fast as the next library, `google-polyline` (geometric mean). Most of that comes from not building the string one character at a time. On Node and Bun it writes bytes into a reused `Buffer` and makes the string with one `latin1Slice` call, which on Node 24 was 109 against 66 million points per second. Deno and Chrome do the same for long lines with `TextDecoder`. Each runtime gets its own build through package.json export conditions.
+Encoding is the clear win. Across all runtimes and line lengths, polytini was 2.05 times as fast as the next library, `google-polyline` (geometric mean). Most of that comes from not building the string piece by piece. On Node and Bun it writes bytes into a reused `Buffer` and makes the string with one `latin1Slice` call, which on Node 24 was 109 against 66 million points per second. Deno and Chrome do the same for long lines with `TextDecoder`. Each runtime gets its own build.
 
-Decoding is about even. polytini led on long lines (1.14x) and on the real-world lines (1.22x), both inside the noise. On short lines (10 and 100 points) it lost 14 of 16 cells to the fastest other library, by 5 to 36%. In the Node 24 chart below it's fourth at 10 points.
+Decoding is about even. polytini led on long lines (1.14x) and on the real-world lines (1.22x), inside the noise. On short lines (10 and 100 points) it lost 14 of 16 cells to the fastest other library, by 5 to 36%.
 
 It's also bigger. The default entry is about 2 KB gzipped, against 551 bytes for `google-polyline` and 568 for `@googlemaps/polyline-codec`. Most of the extra is error checking and an exact path for precision 7 and up. If every byte counts, one of those two is the better pick.
 
@@ -43,9 +43,9 @@ It also throws on invalid characters and NaN coordinates. I made that the defaul
 
 ## What didn't pay off
 
-WebAssembly mostly didn't help. There's an opt-in build at `@duoquote/polytini/wasm`, a hand-written WAT module of 906 bytes, but for `[lat, lng]` arrays it doesn't help. Building the arrays is most of the work, so those calls go to the JavaScript core. It only wins when you decode many lines in one call. `decodeMany` was 1.36 to 2.70 times as fast as the JavaScript way to the same deck.gl output on Bun, Node and Deno, and a bit slower in Chrome (0.93). `encodeMany` lost everywhere. A Rust version that reads 8 bytes at a time was worse still, at 2.7 KB and 10 to 40% slower than the plain byte loop. Each value starts where the last one ended, so there isn't much to do in parallel.
+WebAssembly paid off in fewer places than you'd think. There's an opt-in build at `@duoquote/polytini/wasm`, a hand-written WAT module of 906 bytes, but for `[lat, lng]` arrays it's no faster: building the arrays is most of the work, so those calls go to the JavaScript core. It's clearly faster only when you decode many lines in one call. `decodeMany` was 1.36 to 2.70 times as fast as the JavaScript way to the same deck.gl output on Bun, Node and Deno, and a bit slower in Chrome (0.93). `encodeMany` lost everywhere. A Rust version that reads 8 bytes at a time was worse still, at 2.7 KB and 10 to 40% slower than the plain byte loop. Each value starts where the last one ended, so there isn't much to do in parallel.
 
-Cloudflare Workers are only half measured. I've run them locally in workerd, not on Cloudflare's servers, and decoding there was close to Node in some runs and up to 1.8 times slower in others, with nothing changed in between. I haven't found out why.
+Cloudflare Workers are only half measured. I've only run them locally in workerd, and decoding there was close to Node in some runs and up to 1.8 times slower in others, with nothing changed in between. I haven't found out why.
 
 ## Using it
 
@@ -72,4 +72,4 @@ decode('_p~iF~ps|U_ulLnnqC');              // [[38.5, -120.2], [40.7, -120.95]]
 decode(route.geometry, osrm6);             // OSRM polyline6, as [lng, lat]
 ```
 
-The precision isn't stored in the string, so a `polyline6` string decoded at precision 5 gives coordinates ten times too big, with no error. That's what the presets are for. The adapters for Leaflet, Turf, OpenLayers, MapLibre, deck.gl and Google Maps, and the CLI, are in the [README](https://github.com/Duoquote/polytini#readme) as well.
+The precision isn't stored in the string, so a `polyline6` string decoded at precision 5 gives coordinates ten times too big, with no error. That's what the presets are for. The adapters for Leaflet, Turf, OpenLayers, MapLibre, deck.gl and Google Maps are in the [README](https://github.com/Duoquote/polytini#readme) too, along with the CLI.
