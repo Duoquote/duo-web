@@ -76,10 +76,15 @@ const isLocal = (src) => typeof src === "string" && !/^(?:[a-z]+:)?\/\//i.test(s
 
 const isBlank = (node) => node.type === "text" && !node.value.trim();
 
+/** "./chart-dark.png" or "./chart.dark.png": the dark-theme version of the image before it. */
+export const isDarkVariant = (src) => typeof src === "string" && /[-.]dark\.(?:png|jpe?g|webp|gif|avif|svg)$/i.test(src);
+
 /**
  * rehype (hast) image handling, run before Astro's own image pass:
  * - an image alone in a paragraph becomes <figure>; its Markdown title,
  *   ![alt](./x.png "Caption"), becomes the <figcaption>
+ * - two images on one line, the second named *-dark.png, become one figure
+ *   that shows the light or the dark one to match the theme (see blog.css)
  * - the first image loads eagerly with high priority when the post has no
  *   cover (with a cover, the cover is the LCP image); the rest lazy-load
  * - local images get a `sizes` that matches the article column, so the
@@ -93,14 +98,23 @@ export function rehypePostImages() {
     walk(tree, (node) => {
       if (node.type !== "element" || node.tagName !== "p") return;
       const meaningful = node.children.filter((c) => !isBlank(c));
-      if (meaningful.length !== 1) return;
-      const img = meaningful[0];
-      if (img.type !== "element" || img.tagName !== "img") return;
+      const isImg = (n) => n?.type === "element" && n.tagName === "img";
+      const [img, dark] = meaningful;
+      if (!isImg(img)) return;
+      // ![alt](./chart.png "Caption") ![alt](./chart-dark.png): one figure, CSS shows the one for the theme
+      const pair = meaningful.length === 2 && isImg(dark) && isDarkVariant(dark.properties.src);
+      if (meaningful.length !== 1 && !pair) return;
 
       const caption = img.properties.title;
       delete img.properties.title;
       node.tagName = "figure";
-      node.children = [img];
+      if (pair) {
+        delete dark.properties.title;
+        const wrap = (child, className) => ({ type: "element", tagName: "span", properties: { className: [className] }, children: [child] });
+        node.children = [wrap(img, "img-light"), wrap(dark, "img-dark")];
+      } else {
+        node.children = [img];
+      }
       if (caption) {
         node.children.push({
           type: "element",

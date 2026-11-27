@@ -2,9 +2,19 @@
 import { render } from "astro:content";
 import { Image } from "astro:assets";
 import Base from "../layouts/Base.astro";
-import { getPosts, postUrl, describe, modifiedDate, isUpdated, type Post } from "../lib/posts";
+import {
+  getPosts,
+  postUrl,
+  describe,
+  modifiedDate,
+  isUpdated,
+  summaryPoints,
+  summaryText,
+  summaryNote,
+  type Post,
+} from "../lib/posts";
 import { ogImageFor } from "../lib/og";
-import { AUTHOR, BLOG_NAME, MAIN_SITE_URL, PERSON_JSONLD, SITE_URL, absolute, formatDate } from "../lib/site";
+import { AUTHOR, BLOG_NAME, COPY, MAIN_SITE_URL, PERSON_JSONLD, SITE_URL, absolute, formatDate } from "../lib/site";
 
 export async function getStaticPaths() {
   const posts = await getPosts();
@@ -24,6 +34,17 @@ if (post.data.cover && !post.data.coverAlt?.trim()) {
   console.warn(`\x1b[33m[blog]\x1b[0m ${post.id}: cover has no coverAlt. Using the title as alt text.`);
 }
 
+const summary = summaryPoints(post);
+if (!summary.length && !post.data.draft) {
+  console.warn(
+    `\x1b[33m[blog]\x1b[0m ${post.id}: no summary in the front matter, so the post has no TL;DR box. ` +
+      `Run "bun run summarize ${post.id}" for a prompt to write one.`,
+  );
+}
+
+/** Split a summary point on `code` spans. Astro escapes the text, so only <code> is added. */
+const codeParts = (text: string) => text.split(/`([^`]+)`/).map((part, i) => ({ code: i % 2 === 1, part }));
+
 const person = PERSON_JSONLD;
 
 const jsonLd = [
@@ -32,6 +53,7 @@ const jsonLd = [
     "@id": `${url}#post`,
     headline: post.data.title,
     description,
+    ...(summary.length ? { abstract: summaryText(post) } : {}),
     url,
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
     datePublished: published.toISOString(),
@@ -103,6 +125,26 @@ const jsonLd = [
     </header>
 
     {
+      summary.length > 0 && (
+        <aside class="post-summary" aria-labelledby="summary-heading">
+          <p class="post-summary-head">
+            <span id="summary-heading" class="post-summary-title">{COPY.summaryHeading}</span>
+            <span class="post-summary-note">{summaryNote(post)}</span>
+          </p>
+          {summary.length === 1 ? (
+            <p>{codeParts(summary[0]).map(({ code, part }) => (code ? <code>{part}</code> : part))}</p>
+          ) : (
+            <ul>
+              {summary.map((point) => (
+                <li>{codeParts(point).map(({ code, part }) => (code ? <code>{part}</code> : part))}</li>
+              ))}
+            </ul>
+          )}
+        </aside>
+      )
+    }
+
+    {
       post.data.cover && (
         <Image
           src={post.data.cover}
@@ -123,3 +165,27 @@ const jsonLd = [
     <a href="/" class="text-muted-foreground transition-colors hover:text-foreground">More posts</a>
   </p>
 </Base>
+
+<script>
+  // A copy button on each code block. Without JavaScript the blocks are still plain, selectable text.
+  for (const pre of document.querySelectorAll<HTMLPreElement>(".post-content pre")) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "copy-code";
+    button.textContent = "Copy";
+    button.setAttribute("aria-label", "Copy code");
+    button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText((pre.querySelector("code") ?? pre).innerText.replace(/\n$/, ""));
+        button.textContent = "Copied";
+      } catch {
+        button.textContent = "Select and copy";
+      }
+      setTimeout(() => (button.textContent = "Copy"), 1500);
+    });
+    const wrap = document.createElement("div");
+    wrap.className = "code-block";
+    pre.replaceWith(wrap);
+    wrap.append(pre, button);
+  }
+</script>

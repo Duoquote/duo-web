@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { getPosts, postUrl, describe } from "../lib/posts";
+import { getPosts, postUrl, describe, summaryText, summaryNote } from "../lib/posts";
 import { AUTHOR, BLOG_NAME, COMPANY, COPY, MAIN_SITE_URL, ROLE, SITE_URL, absolute } from "../lib/site";
 
 // llms.txt (https://llmstxt.org): an H1, a one-paragraph summary in a
@@ -19,7 +19,12 @@ export const GET: APIRoute = async () => {
     "## Posts",
     "",
     ...(posts.length
-      ? posts.map((post) => `- [${post.data.title}](${absolute(postUrl(post) + ".md")}): ${describe(post)}`)
+      ? posts.flatMap((post) => {
+          const line = `- [${post.data.title}](${absolute(postUrl(post) + ".md")}): ${describe(post)}`;
+          const summary = summaryText(post, true);
+          if (!summary) return [line];
+          return [line, `  - ${COPY.summaryHeading} (${summaryNote(post)}): ${summary}`];
+        })
       : ["No posts yet."]),
     "",
     "## Pages",

@@ -40,6 +40,16 @@ const posts = defineCollection({
       title: z.string().min(1),
       /** Used for <meta name="description">, OG and the post list. Falls back to an excerpt. */
       description: z.string().optional(),
+      /**
+       * The TL;DR box at the top of the post: 1 or 2 sentences, or 2 to 4
+       * short bullet points. `inline code` in backticks is kept. Written with
+       * the post and stored here; the build never calls an AI service.
+       */
+      summary: z
+        .union([z.string().min(1), z.array(z.string().min(1)).min(1).max(4)])
+        .optional(),
+      /** Who wrote the summary. "ai" (the default) labels the box "Summarized with AI". */
+      summaryBy: z.enum(["ai", "author"]).default("ai"),
       date: z.coerce.date(),
       /** Last meaningful edit. Shows on the post, and feeds dateModified and the sitemap. */
       updated: z.coerce.date().optional(),
