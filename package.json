@@ -10,7 +10,8 @@
     "dev:blog": "astro dev --root blog",
     "build:blog": "astro build --root blog",
     "preview:blog": "astro preview --root blog",
-    "deploy:blog": "astro build --root blog && node blog/scripts/deploy.mjs"
+    "deploy:blog": "astro build --root blog && node blog/scripts/deploy.mjs",
+    "summarize": "node blog/scripts/summarize.mjs"
   },
   "comment:overrides": "Cloudflare Pages installs with npm, which ignores bun.lock and floats @swc/core past what vite-plugin-top-level-await 1.6.0 can drive (1.16.x makes its AST printer fail with: missing field `type`). Pin until the plugin catches up.",
   "overrides": {

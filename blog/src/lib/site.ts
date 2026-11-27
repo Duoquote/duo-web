@@ -50,6 +50,10 @@ export const COPY = {
   source: "Each post is a plain Markdown file in the duo-web repo.",
   about: `I'm Güven Değirmenci, a developer in Istanbul and ${ROLE} at ${COMPANY}. My tools and the rest of my work are on dq.ms.`,
   empty: "No posts yet.",
+  // the summary box at the top of a post (front matter `summary`)
+  summaryHeading: "TL;DR",
+  summaryByAi: "Summarized with AI",
+  summaryByAuthor: "Summarized by the author",
   notFoundTitle: "Page not found",
   notFoundBody: "There's nothing at this address. The link may be wrong, or the post moved.",
 };

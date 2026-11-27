@@ -5,8 +5,9 @@
 import path from "node:path";
 import { getImage } from "astro:assets";
 import type { ImageMetadata } from "astro";
-import { AUTHOR, absolute, formatDate } from "./site";
-import { postUrl, describe, modifiedDate, isUpdated, type Post } from "./posts";
+import { AUTHOR, COPY, absolute, formatDate } from "./site";
+import { postUrl, describe, modifiedDate, isUpdated, summaryPoints, summaryNote, type Post } from "./posts";
+import { isDarkVariant } from "./markdown.mjs";
 
 const images = import.meta.glob<ImageMetadata>("/posts/**/*.{png,jpg,jpeg,webp,gif,avif,tiff}", {
   eager: true,
@@ -50,7 +51,16 @@ export async function postMarkdown(post: Post): Promise<string> {
     ...(post.data.tags.length ? [`Tags: ${post.data.tags.join(", ")}`] : []),
   ].join(" · ");
 
-  const body = await rewriteImages(post, (post.body ?? "").trim());
+  // the dark-theme copy of an image adds nothing in plain Markdown
+  const source = (post.body ?? "")
+    .trim()
+    .replace(/[ \t]*!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, (img, src) => (isDarkVariant(src) ? "" : img));
+  const body = await rewriteImages(post, source);
+
+  const points = summaryPoints(post);
+  const summary = points.length
+    ? [`## ${COPY.summaryHeading}`, "", `_${summaryNote(post)}_`, "", ...points.map((p) => `- ${p}`), ""]
+    : [];
   // a leading "# Title" in the source would duplicate the heading added here
   const withoutTitle = body.replace(/^#\s+(.+)\n+/, (line, text) =>
     text.trim() === post.data.title.trim() ? "" : line,
@@ -65,6 +75,7 @@ export async function postMarkdown(post: Post): Promise<string> {
     "",
     `Canonical: ${url}`,
     "",
+    ...summary,
     withoutTitle,
     "",
   ].join("\n");

@@ -210,3 +210,81 @@
 }
 .post-content .footnotes p { margin-bottom: 0.5em; }
 .post-content .data-footnote-backref { text-decoration: none; margin-left: 0.25em; }
+
+/* light and dark versions of one image: ![alt](./chart.png) ![alt](./chart-dark.png)
+   on one line become one figure, and the theme decides which one shows */
+.post-content figure :is(.img-light, .img-dark) { display: block; }
+.post-content figure .img-dark { display: none; }
+.dark .post-content figure .img-light { display: none; }
+.dark .post-content figure .img-dark { display: block; }
+
+/* ---------- TL;DR box (front matter `summary`) ---------- */
+
+.post-summary {
+  margin-bottom: 2.5rem;
+  border: 1px solid var(--border);
+  border-left: 2px solid color-mix(in oklch, var(--primary) 60%, transparent);
+  background: var(--card);
+  padding: 0.9rem 1.1rem 0.95rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--foreground);
+}
+.post-summary-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.6rem;
+  margin-bottom: 0.45rem;
+}
+.post-summary-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+.post-summary-note {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+.post-summary ul {
+  list-style: disc;
+  padding-left: 1.15em;
+}
+.post-summary li + li { margin-top: 0.3em; }
+.post-summary li::marker { color: var(--muted-foreground); }
+.post-summary code {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  font-size: 0.875em;
+  background: var(--muted);
+  padding: 0.1em 0.3em;
+  border-radius: 2px;
+  overflow-wrap: anywhere;
+}
+
+/* copy button, added to each code block by the post page's script */
+.post-content .code-block {
+  position: relative;
+  margin-bottom: 1.25em;
+}
+.post-content .code-block pre { margin-bottom: 0; padding-right: 4.25rem; }
+.post-content .copy-code {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 0.1rem 0.45rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+.post-content .code-block:hover .copy-code,
+.post-content .copy-code:focus-visible { opacity: 1; }
+.post-content .copy-code:hover { color: var(--foreground); }
+@media (hover: none) {
+  .post-content .copy-code { opacity: 1; }
+}
