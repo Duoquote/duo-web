@@ -45,7 +45,7 @@ It also throws on invalid characters and NaN coordinates. I made that the defaul
 
 WebAssembly paid off in fewer places than you'd think. There's an opt-in build at `@duoquote/polytini/wasm`, a hand-written WAT module of 906 bytes, but for `[lat, lng]` arrays it's no faster: building the arrays is most of the work, so those calls go to the JavaScript core. It's clearly faster only when you decode many lines in one call. `decodeMany` was 1.36 to 2.70 times as fast as the JavaScript way to the same deck.gl output on Bun, Node and Deno, and a bit slower in Chrome (0.93). `encodeMany` lost everywhere. A Rust version that reads 8 bytes at a time was worse still, at 2.7 KB and 10 to 40% slower than the plain byte loop. Each value starts where the last one ended, so there isn't much to do in parallel.
 
-Cloudflare Workers are only half measured. I've only run them locally in workerd, and decoding there was close to Node in some runs and up to 1.8 times slower in others, with nothing changed in between. I haven't found out why.
+Cloudflare Workers are half measured. I've only run them locally in workerd, and decoding there was close to Node in some runs and up to 1.8 times slower in others, with nothing changed in between. I haven't found out why.
 
 ## Using it
 
