@@ -13,7 +13,7 @@ coverAlt: The polytini logo, a small bird sitting on a line, next to the text "E
 draft: false
 ---
 
-polytini is a JavaScript library for Google encoded polylines, the short strings like `_p~iF~ps|U_ulLnnqC` that Google Maps, OSRM, Valhalla, GraphHopper and Mapbox return for route geometry. It's on [npm](https://www.npmjs.com/package/@duoquote/polytini) and [JSR](https://jsr.io/@duoquote/polytini) as `@duoquote/polytini`, and it runs in Node, Bun, Deno, browsers and Cloudflare Workers.
+polytini is a JavaScript library for Google encoded polylines, the short strings like `_p~iF~ps|U_ulLnnqC` that Google Maps, OSRM, Valhalla, GraphHopper and Mapbox return for route geometry. It's on [npm](https://www.npmjs.com/package/@duoquote/polytini) and [JSR](https://jsr.io/@duoquote/polytini) as `@duoquote/polytini`, and it runs in Node, Bun, Deno, browsers and Cloudflare Workers. You can try it in the browser on the [demo page](https://duoquote.github.io/polytini/), with a map, the strict mode example from below and a benchmark that runs on your machine.
 
 It started at work, where we sent polygons to the browser as encoded polylines because the format is compact. A polyline is only one line, though, so we added one separator character for a polygon's holes and another for the parts of a multipolygon. Sending them was cheap, but encoding and decoding took noticeable time.
 
